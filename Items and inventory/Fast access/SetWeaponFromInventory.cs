@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 public class SetWeaponFromInventory : DropItemToFastAccess
 {
     [Tooltip("1 = Main weapon, 0 = Second Weapon")]
-    [SerializeField] int weaponType = 0;
+    public int weaponType = 0;
 
     PlayerController controller;
 

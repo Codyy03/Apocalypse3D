@@ -53,7 +53,7 @@ public class ZombieController : MonoBehaviour
 
 
     [Header("DŸwiêki")]
-    [SerializeField] AudioClip walkSound, walkingTowardsPlayerSound,runingSound;
+    [SerializeField] AudioClip walkSound, walkingTowardsPlayerSound,runingSound, idleSound;
     [SerializeField] AudioClip hitSound;
     [SerializeField] AudioClip attackSound;
 
@@ -98,18 +98,17 @@ public class ZombieController : MonoBehaviour
 
         if (distance > distanceToWalk)
         {
-
             if(ZombieStartState.Idle == startState)
             {
                 // Gracz za daleko. 
                 animationsController.ChangeAnimation(animationsController.idle);
                 agent.ResetPath();
+                PlayWalkSound(idleSound);
 
-                if (walkAudioSource.isPlaying)
+                if (walkAudioSource.isPlaying && walkAudioSource.clip != idleSound)
                 {
                     StartCoroutine(FadeOutAudio(walkAudioSource, fadeDuration));
                 }
-
             }
             else
             {

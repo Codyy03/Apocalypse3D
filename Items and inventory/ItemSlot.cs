@@ -1,3 +1,4 @@
+using Knife.RealBlood.SimpleController;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,13 +13,14 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     AudioManager audioManager;
     //  PlayerHealth playerHealth;
     bool pointerIsOnItem;
-
+    PlayerController playerController;
     ShowItemDescription showItemDescription;
     private void Awake()
     {
         showItemDescription = GetComponent<ShowItemDescription>();
         inventory = FindFirstObjectByType<Inventory>();
         audioManager = FindFirstObjectByType<AudioManager>();
+        playerController = FindFirstObjectByType<PlayerController>();
         //  playerHealth = FindFirstObjectByType<PlayerHealth>();
     }
     public void OnDrop(PointerEventData eventData)
@@ -57,7 +59,10 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         else if (fastAccessWeapon != null)
         {
             inventory.CreateItem(fastAccessWeapon.actualUseID);
+            playerController.RemoveWeapon(fastAccessWeapon.weaponType);
+            playerController.UpdateWeaponAfterInventoryChange(fastAccessWeapon.weaponType == 0 ? 1 : 0);
             fastAccessWeapon.UpdateFastAccess();
+
         }
         else if (fastAccessMedicine != null)
         {

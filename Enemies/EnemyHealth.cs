@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.Events;
 
 public class EnemyHealth : MonoBehaviour
 {
@@ -16,6 +17,8 @@ public class EnemyHealth : MonoBehaviour
     private CapsuleCollider capsuleCollider;
     private AudioSource[] sources = new AudioSource[2];
     private SphereCollider attackCollider;
+
+    public UnityEvent onDeadEvent;
 
     void Awake()
     {
@@ -53,10 +56,16 @@ public class EnemyHealth : MonoBehaviour
         agent.enabled = false;
         rb.useGravity = false;
         capsuleCollider.enabled = false;
+
         sources[1].PlayOneShot(dyingSound);
+
         attackCollider.enabled = false;
+
         zombieController.enabled = false;
+
         sources[0].enabled = false;
+
+        onDeadEvent?.Invoke();
 
         animations.ChangeAnimation(animations.dead);
 

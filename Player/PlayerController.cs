@@ -35,19 +35,17 @@ public class PlayerController : MonoBehaviour
         fpsController = GetComponent<FpsControllerLPFP>();
         lastSelectedWeapon = usedWeapons[0];
         usedWeapons[0].currentWeapon = weapons[0];
+
     }
 
     void Update()
     {
         if (GameManager.UIElementIsOpen || InteractionController.lootIsOpen) return;
 
-        if (usedWeapons[0].currentWeapon == null && usedWeapons[1].currentWeapon == null)
-            noWeapons = true;
-
         HandleWeaponSelection();
         SelectWeaponByScroll();
     }
-
+    // za pomoca scrolla zmien broñ
     void SelectWeaponByScroll()
     {
         if (Mathf.Abs(Input.GetAxis("Mouse ScrollWheel")) > 0f)
@@ -60,13 +58,15 @@ public class PlayerController : MonoBehaviour
             else currentWeaponIndex = (currentWeaponIndex == 0) ? 1 : 0;
         }
     }
+    // zaktualizauj wyci¹gniêt¹ bron przez gracza
     void UpdateWeaponSelection()
     {
         for (int i = 0; i < usedWeapons.Count; i++) 
         {
             bool isActive = (i == currentWeaponIndex);
 
-            usedWeapons[i].currentWeapon.weapon.SetActive(isActive);
+            if (usedWeapons[i].currentWeapon != null) 
+                usedWeapons[i].currentWeapon.weapon.SetActive(isActive);
 
             if (isActive)
             {
@@ -75,6 +75,16 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
+    // wyciaga tylko te bron, która jest dostepna
+    public void UpdateWeaponAfterInventoryChange(int weaponType)
+    {
+        if(!noWeapons && usedWeapons[weaponType].showItemDescription.itemInSlot != null)
+        {
+            currentWeaponIndex = weaponType;
+            UpdateWeaponSelection();
+        }
+    }
+    // wybiera za pomoca klawiszy bron gracza
     void HandleWeaponSelection()
     {
         for (int i = 0; i < usedWeapons.Count; i++)
@@ -87,8 +97,45 @@ public class PlayerController : MonoBehaviour
             }
         }
     }
+    // usuwa bron
+    public void RemoveWeapon(int weponType)
+    {
+
+        if (weponType == 0 && usedWeapons[1].currentWeapon.weapon == null)
+        {
+            noWeapons = true;
+            usedWeapons[0].currentWeapon.weapon.GetComponentInChildren<Gun>().HideWeapon();
+            return;
+        }
+        if (weponType == 1 && usedWeapons[0].currentWeapon.weapon == null)
+        {
+            noWeapons = true;
+            usedWeapons[1].currentWeapon.weapon.GetComponentInChildren<Gun>().HideWeapon();
+            return;
+        }
+        usedWeapons[weponType].currentWeapon.weapon.SetActive(false);
+        usedWeapons[weponType].currentWeapon = null;
+
+    }
+    void DisableWeapon(int weponType)
+    {
+        if (weponType == 0 && usedWeapons[1].currentWeapon.weapon == null)
+        {
+            noWeapons = true;
+            usedWeapons[0].currentWeapon.weapon.GetComponentInChildren<Gun>().HideWeapon();
+            return;
+        }
+        if (weponType == 1 && usedWeapons[0].currentWeapon.weapon == null)
+        {
+            noWeapons = true;
+            usedWeapons[1].currentWeapon.weapon.GetComponentInChildren<Gun>().HideWeapon();
+            return;
+        }
+    }
+    // zmienia bron i wyciaga nowo za³o¿on¹
     public void ChangeWeapon(int weaponType, Item weapon)
     {
+        Gun gun;
         for (int i = 0; i < weapons.Count; i++)
         {
             if (weapons[i].weaponItem == weapon)
@@ -96,11 +143,19 @@ public class PlayerController : MonoBehaviour
                 
                 usedWeapons[currentWeaponIndex].currentWeapon.weapon.SetActive(false);
                 usedWeapons[weaponType].currentWeapon = weapons[i];
-                usedWeapons[weaponType].currentWeapon.weapon.GetComponentInChildren<Gun>().damage = weapon.damage;
+
+                gun = usedWeapons[weaponType].currentWeapon.weapon.GetComponentInChildren<Gun>();
+                gun.damage = weapon.damage;
+
                 usedWeapons[weaponType].currentWeapon.weapon.SetActive(true);
+
                 lastSelectedWeapon = usedWeapons[weaponType];
                 currentWeaponIndex = weaponType;
                 fpsController.arms = usedWeapons[weaponType].currentWeapon.weapon.transform;
+
+                noWeapons = false;
+                gun.ShowWeapon();
+
                 return;
             }
         }

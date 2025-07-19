@@ -33,6 +33,9 @@ public abstract class Gun : MonoBehaviour
     public AudioSource mainAudioSource;
     //Audio source used for shoot sound
     public AudioSource shootAudioSource;
+
+    protected PlayerController playerController;
+
     public virtual void Shoot(Camera mainCamera)
     {
         RaycastHit hit;
@@ -55,7 +58,7 @@ public abstract class Gun : MonoBehaviour
     public void UpdateHosler()
     {
         //Toggle weapon holster when pressing tab key
-        if (Input.GetKeyDown(KeyCode.Tab))
+        if (Input.GetKeyDown(KeyCode.Tab) && !playerController.noWeapons)
         {
             holstered = !holstered; // prze³¹czanie stanu
 

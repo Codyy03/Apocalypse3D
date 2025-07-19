@@ -37,7 +37,7 @@ public class GameManager : MonoBehaviour
         {
             UIElementIsOpen = false;
             Time.timeScale = 1.0f;
-            AudioListener.pause = false;
+
             for (int i = 0; i < playerUIToOpen.Count; i++)
             {
 
@@ -48,7 +48,7 @@ public class GameManager : MonoBehaviour
                     return;
                 }
             }
-            AudioListener.pause = true;
+
             ActivateObject(playerUIToOpen[1]);
         }
 
@@ -84,7 +84,6 @@ public class GameManager : MonoBehaviour
             Cursor.lockState = CursorLockMode.Locked;
             Time.timeScale = 1;
             UIElementIsOpen = false;
-           // AudioListener.pause = false;
             return;
         }
     }
