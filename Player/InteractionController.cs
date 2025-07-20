@@ -17,16 +17,14 @@ public class InteractionController : MonoBehaviour
     GameObject currentInteraction;
 
     public bool playerInItemSphere;
-    LootController lootController;
+    [SerializeField] LootController lootController;
     public Loot loot;
 
     int howManyItems;
-    Inventory inventory;
+    [SerializeField] Inventory inventory;
     AudioManager audioManager;
     private void Awake()
     {
-        lootController = FindAnyObjectByType<LootController>();
-        inventory = FindFirstObjectByType<Inventory>();
         audioManager = FindFirstObjectByType<AudioManager>();
     }
     private void Update()
@@ -58,7 +56,6 @@ public class InteractionController : MonoBehaviour
             }
             audioManager.PlayClip(takeAllSound);
             TookItems();
-
         }
 
         // Pobieranie jednego przedmiotu klawiszem E
@@ -68,7 +65,6 @@ public class InteractionController : MonoBehaviour
            
             if(howManyItems > 0)
               lootController.contentParent.GetChild(1).transform.GetChild(4).gameObject.SetActive(true);
-
         }
 
         // Wyjœcie z panelu lootu ESC
@@ -77,9 +73,7 @@ public class InteractionController : MonoBehaviour
             audioManager.PlayClip(closeSound);
             DisableLootUI();
         }
-
     }
-
     public void TakeOneItem()
     {
         inventory.CreateManyItems(loot.items[currentChild].item, loot.items[currentChild].quantity);
@@ -107,11 +101,9 @@ public class InteractionController : MonoBehaviour
         lootController.lootPanel.SetActive(false);
         loot = null;
         lootIsOpen = false;
-
     }
     private void OnTriggerEnter(Collider other)
     {
-       
         if (other.CompareTag("Interactive"))
         {
             GameObject newInteraction = other.transform.GetChild(0).gameObject;
@@ -126,30 +118,23 @@ public class InteractionController : MonoBehaviour
                 currentInteraction = newInteraction;
             }
 
-
             playerInItemSphere = true;
             loot = currentInteraction.GetComponentInParent<Loot>();
             currentInteraction.SetActive(true);
         }
-
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Interactive") && currentInteraction != null )
-        {
             DisableLootUI();
-        }
-
     }
-
     void DisableLootUI()
     {
         int childCount = lootController.contentParent.childCount;
+
         for (int i = 0; i < childCount; i++)
-        {
             Destroy(lootController.contentParent.GetChild(0).gameObject);
-        }
 
         loot = null;
         playerInItemSphere = false;

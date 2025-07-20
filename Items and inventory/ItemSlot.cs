@@ -11,7 +11,6 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     Inventory inventory;
 
     AudioManager audioManager;
-    //  PlayerHealth playerHealth;
     bool pointerIsOnItem;
     PlayerController playerController;
     ShowItemDescription showItemDescription;
@@ -21,7 +20,6 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
         inventory = FindFirstObjectByType<Inventory>();
         audioManager = FindFirstObjectByType<AudioManager>();
         playerController = FindFirstObjectByType<PlayerController>();
-        //  playerHealth = FindFirstObjectByType<PlayerHealth>();
     }
     public void OnDrop(PointerEventData eventData)
     {

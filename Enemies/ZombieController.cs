@@ -43,7 +43,7 @@ public class ZombieController : MonoBehaviour
     float hitDuration = 0f;
     float hitTimer = 0f;
 
-    Transform player;
+    [SerializeField] Transform player;
     NavMeshAgent agent;
 
     AnimationsController animationsController;
@@ -64,7 +64,6 @@ public class ZombieController : MonoBehaviour
     {
         agent = GetComponent<NavMeshAgent>();
         animationsController = GetComponent<AnimationsController>();
-        player = FindAnyObjectByType<PlayerController>().transform;
 
         // Domyœlny AudioSource z inspektora jako walking
         walkAudioSource = GetComponent<AudioSource>();
@@ -80,7 +79,6 @@ public class ZombieController : MonoBehaviour
 
         walkSpeed = agent.speed;
     }
-
     void Update()
     {
         if (isHit)
@@ -199,14 +197,12 @@ public class ZombieController : MonoBehaviour
     {
         PlayFX(attackSound);
     }
-
     void PlayFX(AudioClip clip)
     {
         fxAudioSource.Stop();
         fxAudioSource.volume = 1f;
         fxAudioSource.PlayOneShot(clip);
     }
-
     IEnumerator FadeOutAudio(AudioSource source, float duration)
     {
         float startVolume = source.volume;

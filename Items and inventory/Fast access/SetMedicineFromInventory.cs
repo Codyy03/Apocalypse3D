@@ -4,15 +4,9 @@ using UnityEngine.EventSystems;
 using TMPro;
 public class SetMedicineFromInventory : DropItemToFastAccess
 {
-
     [SerializeField] FastAccessUi accessUI;
     [SerializeField] UI ui;
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
-
+ 
     public override void OnDrop(PointerEventData eventData)
     {
         base.OnDrop(eventData);
@@ -20,7 +14,6 @@ public class SetMedicineFromInventory : DropItemToFastAccess
 
         ui.itemDescription = currentDragItem;
     }
-
     public void SetValues()
     {
         if(showItemDescription.itemInSlot != null)

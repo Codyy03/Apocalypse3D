@@ -20,14 +20,12 @@ public class UI : MonoBehaviour
     [SerializeField] AudioClip useMedicineSound;
 
     [SerializeField] GameObject saveNotification;
-    Inventory inventory;
-    PlayerHealth playerHealth;
+    [SerializeField] Inventory inventory;
+    [SerializeField] PlayerHealth playerHealth;
     AudioManager audioManager;
 
     private void Awake()
     {
-        inventory = FindFirstObjectByType<Inventory>();
-        playerHealth = FindFirstObjectByType<PlayerHealth>();
         audioManager = FindFirstObjectByType<AudioManager>();
     }
     private void Update()
@@ -51,12 +49,8 @@ public class UI : MonoBehaviour
             accessUi.ResetValues();
         }
     }
-
     public void HighlightText(TextMeshProUGUI text) => text.color = highlightColor;
-
     public void DisableHighlightText(TextMeshProUGUI text) => text.color = nativColor;
-
-
     private void OnDisable()
     {
         foreach (var text in textsInMenu)
@@ -64,7 +58,6 @@ public class UI : MonoBehaviour
             text.color = nativColor;
         }
     }
-
     public void LoadMenu() => SceneManager.LoadScene(0);
     public void ExitGame() => Application.Quit();
 

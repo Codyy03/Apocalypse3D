@@ -1,23 +1,34 @@
+using Knife.RealBlood.SimpleController;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static Dialogue;
 
 public class TutorialQuest : Quest
 {
-    QuestManager questManager;
-
-    [SerializeField] List<EnemyHealth> enemies;
+    [SerializeField] QuestManager questManager;
 
     [SerializeField] int deadEnemiesCounter;
 
     [SerializeField] GameObject npc,eatingZombie;
-    [SerializeField] AudioClip screamSound;
+    [SerializeField] AudioClip screamSound,dyingSound;
+
+    public List<DialogueText> dialogueTexts = new List<DialogueText>();
+
+    public List<DialogueText> dialogueTextsAfterTalk = new List<DialogueText>();
+
+    [SerializeField] PlayerController playerController;
+    [SerializeField] Dialogue dialogue;
+    
     private void Awake()
     {
-        questManager = FindFirstObjectByType<QuestManager>();
-        enemies = FindObjectsByType<EnemyHealth>(FindObjectsInactive.Include, FindObjectsSortMode.None).ToList();
-
         audioManager = FindFirstObjectByType<AudioManager>();
+    }
+
+    private void Start()
+    {
+        if (state == QuestState.Inactive)
+            playerController.RemoveWeapon(0);
     }
 
     public override void StartQuest()
@@ -31,7 +42,12 @@ public class TutorialQuest : Quest
 
     public override void EndQuest()
     {
-        throw new System.NotImplementedException();
+        state = QuestState.Completed;
+        audioManager.PlayClip(endMission);
+        questManager.QuestCompleted(this);
+        //npc umiera, koniec zadania
+        npc.GetComponent<AudioSource>().PlayOneShot(dyingSound);
+        dialogue.conversationStage = -1;
     }
 
     public override void UpdateQuest()
@@ -52,7 +68,6 @@ public class TutorialQuest : Quest
         }
         questManager.UpdateQuest();
     }
-
     public void IncreseDeadEnemiesCounter()
     {
         deadEnemiesCounter++;
@@ -69,6 +84,7 @@ public class TutorialQuest : Quest
 
         if (other.CompareTag("Player"))
         {
+            dialogue.SetConversationStage(2);
             UpdateQuest();
         }
     }

@@ -23,21 +23,21 @@ public class Dialogue : MonoBehaviour
         public UnityEvent onChoiceSelected;
     }
 
-    public List<DialogueText> dialogueTexts = new List<DialogueText>();
-
-    public List<DialogueText> dialogueTextsAfterTalk = new List<DialogueText>();
-
-    DialoguesManager manager;
-    Transform player;
-    public float distanceToTalk;
-    public int conversationStage = 0;
-    [SerializeField] GameObject notification;
-    private void Awake()
+    [System.Serializable]
+    public class DialogueStage
     {
-        manager = FindFirstObjectByType<DialoguesManager>();
-        player = FindFirstObjectByType<PlayerController>().transform;
-      
+        public List<DialogueText> texts;
     }
+
+    [Tooltip("Etapy konwersacji NPC-a — ka¿dy to osobna faza.")]
+    [SerializeField] public List<DialogueStage> dialogueStages = new();
+
+    [SerializeField] DialoguesManager manager;
+    [SerializeField] Transform player;
+    public float distanceToTalk;
+    public int conversationStage = 0; // -1 = brak mozliwoœci dlaszej rozmowy
+    [SerializeField] GameObject notification;
+ 
     private void Update()
     {
         if (Vector3.Distance(player.position, transform.position) <= distanceToTalk)
@@ -45,17 +45,22 @@ public class Dialogue : MonoBehaviour
             notification.SetActive(true);
             if (Input.GetKeyUp(KeyCode.E))
             {
-                switch (conversationStage)
+                if (conversationStage < dialogueStages.Count && conversationStage!=-1)
                 {
-                    case 0:  manager.StartDialogue(dialogueTexts); conversationStage++; break;
-                    case 1:  manager.StartDialogue(dialogueTextsAfterTalk); break;
+                    manager.StartDialogue(dialogueStages[conversationStage].texts);
                 }
-
-               
-
             }
         }
         else notification.SetActive(false);
 
+    }
+    public void IncreaseConversationStage()
+    {
+        conversationStage++;
+    }
+
+    public void SetConversationStage(int value)
+    {
+        conversationStage = value;
     }
 }

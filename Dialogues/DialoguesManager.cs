@@ -28,7 +28,6 @@ public class DialoguesManager : MonoBehaviour
     {
         playerController = FindFirstObjectByType<PlayerController>();
     }
-
     void Update()
     {
         if (!dialogueIsActive) return;
@@ -42,8 +41,9 @@ public class DialoguesManager : MonoBehaviour
                 EndDialogue();
                 return;
             }
-
+            if (currentDialogue[currentTextIndex].dialogsChoices.Count==0 && currentDialogue[currentTextIndex].getDialogueChoices == -1)
             NextDialogue();
+         
         }
         if (Input.GetKeyDown(KeyCode.Return))
         {
@@ -54,7 +54,6 @@ public class DialoguesManager : MonoBehaviour
             }
         }
     }
-
     public void StartDialogue(List<DialogueText> texts)
     {
         currentDialogue = new List<DialogueText>();
@@ -94,7 +93,6 @@ public class DialoguesManager : MonoBehaviour
 
         ShowDialogue(currentDialogue[currentTextIndex]);
     }
-
     public void NextDialogue()
     {
         RemoveChoiceButtons();
@@ -105,10 +103,10 @@ public class DialoguesManager : MonoBehaviour
             EndDialogue();
             return;
         }
+        EventSystem.current.SetSelectedGameObject(EventSystem.current.currentSelectedGameObject);
 
         ShowDialogue(currentDialogue[currentTextIndex]);
     }
-
     void ShowDialogue(DialogueText textData)
     {
         currentText = textData.dialogue;
@@ -118,6 +116,8 @@ public class DialoguesManager : MonoBehaviour
         RemoveChoiceButtons();
 
         List<DialogueChoice> dialogueChoices = new();
+        List<GameObject> createdButtons = new();
+
         if (textData.getDialogueChoices != -1)
         {
             dialogueChoices = currentDialogue[textData.getDialogueChoices].dialogsChoices;
@@ -127,12 +127,14 @@ public class DialoguesManager : MonoBehaviour
             dialogueChoices = textData.dialogsChoices;
         }
 
-
         foreach (DialogueChoice choice in dialogueChoices)
         {
             GameObject buttonObj = Instantiate(dialogueChoiceButton, dialogueChoicesContener.transform);
             buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = choice.text;
-            // Zapisz pierwszy wygenerowany przycisk
+
+            // Dodaj do listy przycisków (do nawigacji)
+            createdButtons.Add(buttonObj);
+
             if (firstButton == null)
                 firstButton = buttonObj;
 
@@ -157,22 +159,32 @@ public class DialoguesManager : MonoBehaviour
                 }
             });
         }
-        // Ustaw focus dopiero po wygenerowaniu wszystkich przycisków
+
+        // Ustaw focus na pierwszy przycisk
         if (firstButton != null)
             StartCoroutine(SetFocusNextFrame(firstButton));
 
-    }
+        // Ustaw rêcznie nawigacjê miêdzy przyciskami
+        for (int i = 0; i < createdButtons.Count; i++)
+        {
+            Navigation nav = new Navigation
+            {
+                mode = Navigation.Mode.Explicit,
+                selectOnUp = i > 0 ? createdButtons[i - 1].GetComponent<Button>() : null,
+                selectOnDown = i < createdButtons.Count - 1 ? createdButtons[i + 1].GetComponent<Button>() : null
+            };
 
+            createdButtons[i].GetComponent<Button>().navigation = nav;
+        }
+    }
     void RemoveChoiceButtons()
     {
         foreach (Transform child in dialogueChoicesContener.transform)
         {
             Destroy(child.gameObject);
-
         }
         firstButton = null;
     }
-
     public void EndDialogue()
     {
         RemoveChoiceButtons();
@@ -181,12 +193,12 @@ public class DialoguesManager : MonoBehaviour
         currentDialogue.Clear();
         dialogueMenu.SetActive(false);
 
-
         // Przywróæ broñ
-        playerController.lastSelectedWeapon.currentWeapon.weapon.GetComponentInChildren<Gun>().ShowWeapon();
+        if(!playerController.noWeapons)
+            playerController.lastSelectedWeapon.currentWeapon.weapon.GetComponentInChildren<Gun>().ShowWeapon();
+
         StartCoroutine(WaitToDisableDialog());
     }
-
     IEnumerator WaitToDisableDialog()
     {
         yield return new WaitForSeconds(0.3f);

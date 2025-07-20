@@ -8,13 +8,11 @@ public class SetWeaponFromInventory : DropItemToFastAccess
     public int weaponType = 0;
 
     PlayerController controller;
-
     protected override void Awake()
     {
         base.Awake();
         controller = FindFirstObjectByType<PlayerController>();
     }
-
     public override void OnDrop(PointerEventData eventData)
     {
         base.OnDrop(eventData);
@@ -29,6 +27,4 @@ public class SetWeaponFromInventory : DropItemToFastAccess
 
         controller.ChangeWeapon(weaponType, showItemDescription.itemInSlot);
     }
-
-
 }

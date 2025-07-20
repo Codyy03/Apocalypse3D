@@ -54,7 +54,6 @@ public abstract class Gun : MonoBehaviour
             }
         }
     }
-
     public void UpdateHosler()
     {
         //Toggle weapon holster when pressing tab key

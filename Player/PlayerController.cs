@@ -33,11 +33,9 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         fpsController = GetComponent<FpsControllerLPFP>();
-        lastSelectedWeapon = usedWeapons[0];
         usedWeapons[0].currentWeapon = weapons[0];
-
+        lastSelectedWeapon = usedWeapons[0];
     }
-
     void Update()
     {
         if (GameManager.UIElementIsOpen || InteractionController.lootIsOpen) return;
@@ -54,7 +52,6 @@ public class PlayerController : MonoBehaviour
             
             if (usedWeapons[currentWeaponIndex].showItemDescription.itemInSlot != null)
                 UpdateWeaponSelection();
-
             else currentWeaponIndex = (currentWeaponIndex == 0) ? 1 : 0;
         }
     }
@@ -100,7 +97,6 @@ public class PlayerController : MonoBehaviour
     // usuwa bron
     public void RemoveWeapon(int weponType)
     {
-
         if (weponType == 0 && usedWeapons[1].currentWeapon.weapon == null)
         {
             noWeapons = true;
@@ -117,21 +113,6 @@ public class PlayerController : MonoBehaviour
         usedWeapons[weponType].currentWeapon = null;
 
     }
-    void DisableWeapon(int weponType)
-    {
-        if (weponType == 0 && usedWeapons[1].currentWeapon.weapon == null)
-        {
-            noWeapons = true;
-            usedWeapons[0].currentWeapon.weapon.GetComponentInChildren<Gun>().HideWeapon();
-            return;
-        }
-        if (weponType == 1 && usedWeapons[0].currentWeapon.weapon == null)
-        {
-            noWeapons = true;
-            usedWeapons[1].currentWeapon.weapon.GetComponentInChildren<Gun>().HideWeapon();
-            return;
-        }
-    }
     // zmienia bron i wyciaga nowo za³o¿on¹
     public void ChangeWeapon(int weaponType, Item weapon)
     {
@@ -140,7 +121,6 @@ public class PlayerController : MonoBehaviour
         {
             if (weapons[i].weaponItem == weapon)
             {
-                
                 usedWeapons[currentWeaponIndex].currentWeapon.weapon.SetActive(false);
                 usedWeapons[weaponType].currentWeapon = weapons[i];
 
@@ -159,6 +139,5 @@ public class PlayerController : MonoBehaviour
                 return;
             }
         }
-       
     }
 }
