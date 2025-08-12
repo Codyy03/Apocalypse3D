@@ -3,7 +3,7 @@ using UnityEngine;
 public abstract class Gun : MonoBehaviour
 {
     //Animator component attached to weapon
-    protected  Animator anim;
+    protected Animator anim;
 
     // weapon damage when hit enemy
     public float damage;
@@ -36,6 +36,10 @@ public abstract class Gun : MonoBehaviour
 
     protected PlayerController playerController;
 
+    [Header("Atak no¿em")]
+    [SerializeField] protected GameObject attackPoint;
+    protected PlayerAttackPoint playerAttackPoint;
+
     public virtual void Shoot(Camera mainCamera)
     {
         RaycastHit hit;
@@ -50,7 +54,8 @@ public abstract class Gun : MonoBehaviour
                     currentDamage *= 2f;
 
                 hit.transform.GetComponent<EnemyHealth>()?.ChangeHealth(-currentDamage);
-                Instantiate(bloodPrefab, hit.point, Quaternion.identity);
+                GameObject efect = Instantiate(bloodPrefab, hit.point, Quaternion.identity);
+                efect.GetComponent<ParticleSystem>().Play();
             }
         }
     }
@@ -85,4 +90,7 @@ public abstract class Gun : MonoBehaviour
         anim.SetBool("Holster", false);
         hasBeenHolstered = false;
     }
+    public void EnbleAttackPoint() => attackPoint.SetActive(true);
+    public void DisableAttackPoint() => attackPoint.SetActive(false);
+
 }

@@ -31,7 +31,7 @@ public class InteractionController : MonoBehaviour
     {
         // Jeœli gracz nie jest w zasiêgu lub brak loot, przerwij
 
-        if (!playerInItemSphere || loot == null) return;
+        if (!playerInItemSphere || loot == null || Dialogues.DialoguesManager.dialogueIsActive) return;
 
         // Otwieranie panelu lootu
         if (Input.GetKeyDown(KeyCode.E) && !lootController.lootPanel.activeInHierarchy)

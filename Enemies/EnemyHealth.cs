@@ -10,7 +10,7 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] AudioClip dyingSound;
     private float health;
 
-    private AnimationsController animations;
+    private ZombieAnimationsController animations;
     private ZombieController zombieController;
     private NavMeshAgent agent;
     private Rigidbody rb;
@@ -23,7 +23,7 @@ public class EnemyHealth : MonoBehaviour
     void Awake()
     {
         health = maxHealth;
-        animations = GetComponent<AnimationsController>();
+        animations = GetComponent<ZombieAnimationsController>();
         zombieController = GetComponent<ZombieController>();
         agent = GetComponent<NavMeshAgent>();
         rb = GetComponent<Rigidbody>();
@@ -38,7 +38,7 @@ public class EnemyHealth : MonoBehaviour
     public void ChangeHealth(float value)
     {
         health = Mathf.Clamp(health + value, 0f, maxHealth);
-
+      //  Debug.Log(health);
         if (health <= 0f)
         {
             HandleDeath();

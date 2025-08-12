@@ -1,12 +1,11 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.EventSystems;
 using TMPro;
-using NUnit.Framework;
 using System.Collections.Generic;
 using System.Collections;
 public class UI : MonoBehaviour
 {
+    public static UI Instance;
     [Header("Napisy")]
     [SerializeField] List<TextMeshProUGUI> textsInMenu;
 
@@ -26,6 +25,7 @@ public class UI : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
         audioManager = FindFirstObjectByType<AudioManager>();
     }
     private void Update()

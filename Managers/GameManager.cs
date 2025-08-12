@@ -25,6 +25,10 @@ public class GameManager : MonoBehaviour
     SaveSystem saveSystem = new SaveSystem();
 
     List<LootSaveData> savedLoots = new();
+
+    [SerializeField] Camera mapCamera;
+    Camera playerCamera;
+    bool mapWasOpen;
     private void Start()
     {
         player = FindFirstObjectByType<PlayerController>().transform;
@@ -40,7 +44,6 @@ public class GameManager : MonoBehaviour
 
             for (int i = 0; i < playerUIToOpen.Count; i++)
             {
-
                 if (playerUIToOpen[i] != null && playerUIToOpen[i].activeInHierarchy)
                 {
                     DisableAllUiCanvasElements();
@@ -54,11 +57,34 @@ public class GameManager : MonoBehaviour
 
         // element 0 - ekwipunek
         // element 1 - menu
-        // elemeny 2 - panel satystyk
+        // elemeny 2 - mapa
+        // element 3 - misje
 
         if (Input.GetKeyDown(KeyCode.I))
             ActivateObject(playerUIToOpen[0]);
 
+        if (Input.GetKeyDown(KeyCode.M) && !mapWasOpen)
+        {
+            ActivateObject(playerUIToOpen[2]);
+
+            playerCamera = Camera.main;
+            mapCamera.enabled = true;
+            mapCamera.transform.position = new Vector3(player.position.x, mapCamera.transform.position.y, player.position.z);
+          //  playerCamera.gameObject.SetActive(false);
+            mapWasOpen = true;
+        }
+        else if (Input.GetKeyDown(KeyCode.M) && mapWasOpen)
+        {
+            ActivateObject(playerUIToOpen[2]);
+           // playerCamera.gameObject.SetActive(true);
+            mapWasOpen = false;
+            mapCamera.enabled = false;
+        }
+
+        if(Input.GetKeyDown(KeyCode.J))
+        {
+            ActivateObject(playerUIToOpen[3]);
+        }
     }
 
     public void ActivateObject(GameObject o)
@@ -192,7 +218,6 @@ public class GameManager : MonoBehaviour
     {
         foreach (Loot loot in FindObjectsOfType<Loot>())
         {
-
             LootSaveData saved = gameData.lootSaveData.Find(l => l.lootID == loot.lootID);
             if (saved == null) continue;
 

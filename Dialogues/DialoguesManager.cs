@@ -1,213 +1,227 @@
-using Knife.RealBlood.SimpleController;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static Dialogue;
+using static Dialogues.Dialogue;
 
-public class DialoguesManager : MonoBehaviour
+namespace Dialogues
 {
-    public string currentText;
-
-    [Header("Dialogi UI")]
-    [SerializeField] GameObject dialogueMenu;
-    [SerializeField] GameObject dialogueChoicesContener;
-    [SerializeField] GameObject dialogueChoiceButton;
-    [SerializeField] TextMeshProUGUI dialogueText;
-
-    public List<DialogueText> currentDialogue = new();
-    public static bool dialogueIsActive;
-    int currentTextIndex;
-
-    PlayerController playerController;
-    GameObject firstButton = null;
-
-    private void Awake()
+    public class DialoguesManager : MonoBehaviour
     {
-        playerController = FindFirstObjectByType<PlayerController>();
-    }
-    void Update()
-    {
-        if (!dialogueIsActive) return;
+        public static bool dialogueIsActive;
+        public string currentText;
 
-        Cursor.lockState = CursorLockMode.None;
+        [Header("Dialogi UI")]
+        [SerializeField] GameObject dialogueMenu;
+        [SerializeField] GameObject dialogueChoicesContener;
+        [SerializeField] GameObject dialogueChoiceButton;
+        [SerializeField] TextMeshProUGUI dialogueText;
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        public List<DialogueTextSO> currentDialogue = new();
+        int currentTextIndex;
+
+        PlayerController playerController;
+        GameObject firstButton = null;
+
+        UnityEvent onStageEnd;
+        private void Awake()
         {
+            playerController = FindFirstObjectByType<PlayerController>();
+        }
+        void Update()
+        {
+            if (!dialogueIsActive) return;
+
+            Cursor.lockState = CursorLockMode.None;
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                if (currentTextIndex >= currentDialogue.Count)
+                {
+                    EndDialogue();
+                    return;
+                }
+
+                if (currentDialogue[currentTextIndex].dialogsChoices.Count == 0 && currentDialogue[currentTextIndex].returnToNode == null)
+                    NextDialogue();
+
+            }
+            if (Input.GetKeyDown(KeyCode.Return))
+            {
+                if (EventSystem.current.currentSelectedGameObject != null)
+                {
+                    var button = EventSystem.current.currentSelectedGameObject.GetComponent<Button>();
+                    button?.onClick.Invoke();
+                }
+            }
+        }
+        public void StartDialogue(List<DialogueTextSO> texts)
+        {
+            if (dialogueIsActive) return;
+
+            currentDialogue = new List<DialogueTextSO>();
+
+            foreach (DialogueTextSO original in texts)
+            {
+                DialogueTextSO copy = new DialogueTextSO
+                {
+                    dialogue = original.dialogue,
+                    returnToNode = original.returnToNode,
+                    dialogEvent = original.dialogEvent,
+                    dialogsChoices = new List<DialogueChoice>()
+                };
+
+                foreach (DialogueChoice originalChoice in original.dialogsChoices)
+                {
+                    DialogueChoice choiceCopy = new DialogueChoice
+                    {
+                        text = originalChoice.text,
+                        nextDialogueIndex = originalChoice.nextDialogueIndex,
+                        endsDialogue = originalChoice.endsDialogue,
+                        onChoiceSelected = originalChoice.onChoiceSelected
+                    };
+
+                    copy.dialogsChoices.Add(choiceCopy);
+                }
+
+                currentDialogue.Add(copy);
+            }
+
+            currentTextIndex = 0;
+            dialogueIsActive = true;
+            dialogueMenu.SetActive(true);
+
+            // Schowaj broñ
+            playerController.lastSelectedWeapon.currentWeapon.weapon.GetComponentInChildren<Gun>().HideWeapon();
+
+            ShowDialogue(currentDialogue[currentTextIndex]);
+        }
+        public void NextDialogue()
+        {
+            RemoveChoiceButtons();
+
+            currentTextIndex++;
             if (currentTextIndex >= currentDialogue.Count)
             {
                 EndDialogue();
                 return;
             }
-            if (currentDialogue[currentTextIndex].dialogsChoices.Count==0 && currentDialogue[currentTextIndex].getDialogueChoices == -1)
-            NextDialogue();
-         
+            EventSystem.current.SetSelectedGameObject(EventSystem.current.currentSelectedGameObject);
+
+            ShowDialogue(currentDialogue[currentTextIndex]);
         }
-        if (Input.GetKeyDown(KeyCode.Return))
+        void ShowDialogue(DialogueTextSO textData)
         {
-            if (EventSystem.current.currentSelectedGameObject != null)
+            currentText = textData.dialogue;
+            dialogueText.text = currentText;
+
+            textData.dialogEvent?.Invoke();
+            RemoveChoiceButtons();
+
+            List<DialogueChoice> dialogueChoices = new();
+            List<GameObject> createdButtons = new();
+
+            if (textData.returnToNode != null)
             {
-                var button = EventSystem.current.currentSelectedGameObject.GetComponent<Button>();
-                button?.onClick.Invoke();
+                dialogueChoices = textData.returnToNode.dialogsChoices;
             }
-        }
-    }
-    public void StartDialogue(List<DialogueText> texts)
-    {
-        currentDialogue = new List<DialogueText>();
-
-        foreach (DialogueText original in texts)
-        {
-            DialogueText copy = new DialogueText
+            else if (textData.dialogsChoices != null && textData.dialogsChoices.Count > 0)
             {
-                dialogue = original.dialogue,
-                dialogEvent = original.dialogEvent, // zostaje orygina³!
-                getDialogueChoices = original.getDialogueChoices,
-                dialogsChoices = new List<DialogueChoice>()
-            };
+                dialogueChoices = textData.dialogsChoices;
+            }
 
-            foreach (DialogueChoice originalChoice in original.dialogsChoices)
+            foreach (DialogueChoice choice in dialogueChoices)
             {
-                DialogueChoice choiceCopy = new DialogueChoice
+                GameObject buttonObj = Instantiate(dialogueChoiceButton, dialogueChoicesContener.transform);
+                buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = choice.text;
+
+                // Dodaj do listy przycisków (do nawigacji)
+                createdButtons.Add(buttonObj);
+
+                if (firstButton == null)
+                    firstButton = buttonObj;
+
+                buttonObj.GetComponent<Button>().onClick.AddListener(() =>
                 {
-                    text = originalChoice.text,
-                    nextDialogueIndex = originalChoice.nextDialogueIndex,
-                    endsDialogue = originalChoice.endsDialogue,
-                    onChoiceSelected = originalChoice.onChoiceSelected // równie¿ zostaje!
+                    choice.onChoiceSelected?.Invoke();
+                    RemoveChoiceButtons();
+
+                    if (choice.endsDialogue || choice.nextDialogueIndex < 0)
+                    {
+                        EndDialogue();
+                    }
+                    else if (choice.nextDialogueIndex < currentDialogue.Count)
+                    {
+                        currentTextIndex = choice.nextDialogueIndex;
+                        ShowDialogue(currentDialogue[currentTextIndex]);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("B³êdny indeks dialogu: " + choice.nextDialogueIndex);
+                        EndDialogue();
+                    }
+                });
+            }
+
+            // Ustaw focus na pierwszy przycisk
+            if (firstButton != null)
+                StartCoroutine(SetFocusNextFrame(firstButton));
+
+            // Ustaw rêcznie nawigacjê miêdzy przyciskami
+            for (int i = 0; i < createdButtons.Count; i++)
+            {
+                Navigation nav = new Navigation
+                {
+                    mode = Navigation.Mode.Explicit,
+                    selectOnUp = i > 0 ? createdButtons[i - 1].GetComponent<Button>() : null,
+                    selectOnDown = i < createdButtons.Count - 1 ? createdButtons[i + 1].GetComponent<Button>() : null
                 };
 
-                copy.dialogsChoices.Add(choiceCopy);
+                createdButtons[i].GetComponent<Button>().navigation = nav;
             }
-
-            currentDialogue.Add(copy);
         }
-
-        currentTextIndex = 0;
-        dialogueIsActive = true;
-        dialogueMenu.SetActive(true);
-
-        // Schowaj broñ
-        playerController.lastSelectedWeapon.currentWeapon.weapon.GetComponentInChildren<Gun>().HideWeapon();
-
-        ShowDialogue(currentDialogue[currentTextIndex]);
-    }
-    public void NextDialogue()
-    {
-        RemoveChoiceButtons();
-
-        currentTextIndex++;
-        if (currentTextIndex >= currentDialogue.Count)
+        void RemoveChoiceButtons()
         {
-            EndDialogue();
-            return;
-        }
-        EventSystem.current.SetSelectedGameObject(EventSystem.current.currentSelectedGameObject);
-
-        ShowDialogue(currentDialogue[currentTextIndex]);
-    }
-    void ShowDialogue(DialogueText textData)
-    {
-        currentText = textData.dialogue;
-        dialogueText.text = currentText;
-
-        textData.dialogEvent?.Invoke();
-        RemoveChoiceButtons();
-
-        List<DialogueChoice> dialogueChoices = new();
-        List<GameObject> createdButtons = new();
-
-        if (textData.getDialogueChoices != -1)
-        {
-            dialogueChoices = currentDialogue[textData.getDialogueChoices].dialogsChoices;
-        }
-        else if (textData.dialogsChoices != null && textData.dialogsChoices.Count > 0)
-        {
-            dialogueChoices = textData.dialogsChoices;
-        }
-
-        foreach (DialogueChoice choice in dialogueChoices)
-        {
-            GameObject buttonObj = Instantiate(dialogueChoiceButton, dialogueChoicesContener.transform);
-            buttonObj.GetComponentInChildren<TextMeshProUGUI>().text = choice.text;
-
-            // Dodaj do listy przycisków (do nawigacji)
-            createdButtons.Add(buttonObj);
-
-            if (firstButton == null)
-                firstButton = buttonObj;
-
-            buttonObj.GetComponent<Button>().onClick.AddListener(() =>
+            foreach (Transform child in dialogueChoicesContener.transform)
             {
-                choice.onChoiceSelected?.Invoke();
-                RemoveChoiceButtons();
-
-                if (choice.endsDialogue || choice.nextDialogueIndex < 0)
-                {
-                    EndDialogue();
-                }
-                else if (choice.nextDialogueIndex < currentDialogue.Count)
-                {
-                    currentTextIndex = choice.nextDialogueIndex;
-                    ShowDialogue(currentDialogue[currentTextIndex]);
-                }
-                else
-                {
-                    Debug.LogWarning("B³êdny indeks dialogu: " + choice.nextDialogueIndex);
-                    EndDialogue();
-                }
-            });
+                Destroy(child.gameObject);
+            }
+            firstButton = null;
         }
-
-        // Ustaw focus na pierwszy przycisk
-        if (firstButton != null)
-            StartCoroutine(SetFocusNextFrame(firstButton));
-
-        // Ustaw rêcznie nawigacjê miêdzy przyciskami
-        for (int i = 0; i < createdButtons.Count; i++)
+        public void EndDialogue()
         {
-            Navigation nav = new Navigation
-            {
-                mode = Navigation.Mode.Explicit,
-                selectOnUp = i > 0 ? createdButtons[i - 1].GetComponent<Button>() : null,
-                selectOnDown = i < createdButtons.Count - 1 ? createdButtons[i + 1].GetComponent<Button>() : null
-            };
+            RemoveChoiceButtons();
+            dialogueText.text = "";
+            currentTextIndex = 0;
+            currentDialogue.Clear();
+            dialogueMenu.SetActive(false);
 
-            createdButtons[i].GetComponent<Button>().navigation = nav;
+            onStageEnd?.Invoke();
+
+            // Przywróæ broñ
+            if (!playerController.noWeapons)
+                playerController.lastSelectedWeapon.currentWeapon.weapon.GetComponentInChildren<Gun>().ShowWeapon();
+
+            StartCoroutine(WaitToDisableDialog());
         }
-    }
-    void RemoveChoiceButtons()
-    {
-        foreach (Transform child in dialogueChoicesContener.transform)
+        IEnumerator WaitToDisableDialog()
         {
-            Destroy(child.gameObject);
+            yield return new WaitForSeconds(0.3f);
+            dialogueIsActive = false;
+            Cursor.lockState = CursorLockMode.Locked;
         }
-        firstButton = null;
-    }
-    public void EndDialogue()
-    {
-        RemoveChoiceButtons();
-        dialogueText.text = "";
-        currentTextIndex = 0;
-        currentDialogue.Clear();
-        dialogueMenu.SetActive(false);
+        IEnumerator SetFocusNextFrame(GameObject button)
+        {
+            yield return null; // poczekaj 1 frame
+            EventSystem.current.SetSelectedGameObject(button);
+        }
 
-        // Przywróæ broñ
-        if(!playerController.noWeapons)
-            playerController.lastSelectedWeapon.currentWeapon.weapon.GetComponentInChildren<Gun>().ShowWeapon();
-
-        StartCoroutine(WaitToDisableDialog());
-    }
-    IEnumerator WaitToDisableDialog()
-    {
-        yield return new WaitForSeconds(0.3f);
-        dialogueIsActive = false;
-        Cursor.lockState = CursorLockMode.Locked;
-    }
-    IEnumerator SetFocusNextFrame(GameObject button)
-    {
-        yield return null; // poczekaj 1 frame
-        EventSystem.current.SetSelectedGameObject(button);
+        public void SetOnStageEvent(UnityEvent unityEvent)
+        {
+            onStageEnd = unityEvent;
+        }
     }
 }

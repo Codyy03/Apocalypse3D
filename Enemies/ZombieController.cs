@@ -19,7 +19,7 @@ public class ZombieController : MonoBehaviour
     private Vector3 patrolOrigin;
 
     public float distance;
-
+    public float maxChaseDistance = 10f;
     enum ZombieStartState
     { 
         Idle,
@@ -46,11 +46,10 @@ public class ZombieController : MonoBehaviour
     [SerializeField] Transform player;
     NavMeshAgent agent;
 
-    AnimationsController animationsController;
+    ZombieAnimationsController animationsController;
 
     [Header("Parametry uderzenia")]
     [SerializeField] float fadeDuration = 0.5f;
-
 
     [Header("DŸwiêki")]
     [SerializeField] AudioClip walkSound, walkingTowardsPlayerSound,runingSound, idleSound;
@@ -60,10 +59,11 @@ public class ZombieController : MonoBehaviour
     AudioSource walkAudioSource; // do loopów: chodzenie, idle
     AudioSource fxAudioSource;   // do efektów: uderzenie, atak
 
+    [SerializeField] GameObject mapMark;
     void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
-        animationsController = GetComponent<AnimationsController>();
+        animationsController = GetComponent<ZombieAnimationsController>();
 
         // Domyœlny AudioSource z inspektora jako walking
         walkAudioSource = GetComponent<AudioSource>();
@@ -78,6 +78,8 @@ public class ZombieController : MonoBehaviour
         patrolOrigin = transform.position;
 
         walkSpeed = agent.speed;
+
+        agent.updateRotation = false;
     }
     void Update()
     {
@@ -92,6 +94,15 @@ public class ZombieController : MonoBehaviour
             return;
         }
 
+        // rotacja zombie
+        if (agent.velocity.sqrMagnitude > 0.1f)
+        {
+            Vector3 direction = agent.velocity.normalized;
+            Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
+        }
+
+        // dystans do gracza
         distance = Vector3.Distance(transform.position, player.position);
 
         if (distance > distanceToWalk)
@@ -158,7 +169,6 @@ public class ZombieController : MonoBehaviour
             }
         }
     }
-
     void PlayWalkSound(AudioClip sound)
     {
         if (!walkAudioSource.isPlaying || sound != walkAudioSource.clip)
@@ -193,10 +203,7 @@ public class ZombieController : MonoBehaviour
     }
 
     // Wywo³ywana jako Event z animacji ataku
-    public void PlayAttackSound()
-    {
-        PlayFX(attackSound);
-    }
+    public void PlayAttackSound() => PlayFX(attackSound);
     void PlayFX(AudioClip clip)
     {
         fxAudioSource.Stop();
@@ -227,6 +234,9 @@ public class ZombieController : MonoBehaviour
 
         return transform.position;
     }
+
+    public void SetMarkMapVisibility(bool visible) => mapMark.SetActive(visible);
+    
 }
 
 

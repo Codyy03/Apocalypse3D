@@ -2,39 +2,58 @@ using NUnit.Framework.Interfaces;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class Quest : MonoBehaviour
+namespace Quests 
 {
-    public int questID;
-
-    public int questStage = 0;
-
-    public string questPorgress;
-
-    public string questName;
-
-    public string[] stages;
-
-    public enum QuestState { Inactive, Active, Completed }
-    public QuestState state;
-
-    public int rewardXP;
-    public List<Item> rewardItems;
-
-    [System.Serializable]
-    public class QuestObjective
+    public abstract class Quest : MonoBehaviour
     {
-        public string description;
-        public bool isCompleted;
+        [Header("Identyfikatory")]
+        public int questID;
+        public int questStage = 0;
+
+        [Header("Dialogi")]
+        public string questPorgress;
+        public string questName;
+        public string[] stages;
+
+        [Header("Opis w UI")]
+        [TextArea]
+        public string[] questDescriptions;
+
+        public enum QuestState { Inactive, Active, Completed }
+        public QuestState state;
+
+        public enum QuestType
+        {
+            Fabular,
+            Side,
+            Mission
+        }
+        public QuestType questType;
+
+        [Header("Nagroda")]
+        public int rewardXP;
+        public List<Item> rewardItems;
+
+        [System.Serializable]
+        public class QuestObjective
+        {
+            public string description;
+            public bool isCompleted;
+        }
+
+        protected AudioManager audioManager;
+
+        [Header("DŸwiêki ogólne")]
+        public AudioClip startMission;
+        public AudioClip updateMission;
+        public AudioClip endMission;
+        public abstract void StartQuest();
+
+        public abstract void UpdateQuest();
+
+        public abstract void EndQuest();
+
     }
-
-    protected AudioManager audioManager;
-    public AudioClip startMission;
-    public AudioClip updateMission;
-    public AudioClip endMission;
-    public abstract void StartQuest();
-
-    public abstract void UpdateQuest();
-
-    public abstract void EndQuest();
-
 }
+
+

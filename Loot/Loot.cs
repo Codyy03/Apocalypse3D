@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using static LootController;
 
+[RequireComponent(typeof(LootIDAssignerZ))]
 public class Loot : MonoBehaviour
 {
     public string lootID;
