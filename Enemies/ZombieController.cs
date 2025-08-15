@@ -20,6 +20,8 @@ public class ZombieController : MonoBehaviour
 
     public float distance;
     public float maxChaseDistance = 10f;
+
+    public GameObject mapMark;
     enum ZombieStartState
     { 
         Idle,
@@ -59,7 +61,6 @@ public class ZombieController : MonoBehaviour
     AudioSource walkAudioSource; // do loopów: chodzenie, idle
     AudioSource fxAudioSource;   // do efektów: uderzenie, atak
 
-    [SerializeField] GameObject mapMark;
     void Awake()
     {
         agent = GetComponent<NavMeshAgent>();

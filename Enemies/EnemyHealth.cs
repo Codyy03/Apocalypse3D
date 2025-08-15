@@ -8,15 +8,15 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] float maxHealth = 100f;
 
     [SerializeField] AudioClip dyingSound;
-    private float health;
+    float health;
 
-    private ZombieAnimationsController animations;
-    private ZombieController zombieController;
-    private NavMeshAgent agent;
-    private Rigidbody rb;
-    private CapsuleCollider capsuleCollider;
-    private AudioSource[] sources = new AudioSource[2];
-    private SphereCollider attackCollider;
+    ZombieAnimationsController animations;
+    ZombieController zombieController;
+    NavMeshAgent agent;
+    Rigidbody rb;
+    CapsuleCollider capsuleCollider;
+    AudioSource[] sources = new AudioSource[2];
+    SphereCollider attackCollider;
 
     public UnityEvent onDeadEvent;
 
@@ -50,7 +50,6 @@ public class EnemyHealth : MonoBehaviour
             zombieController.TriggerHitAnimation();
         }
     }
-
     private void HandleDeath()
     {
         agent.enabled = false;
@@ -69,9 +68,10 @@ public class EnemyHealth : MonoBehaviour
 
         animations.ChangeAnimation(animations.dead);
 
+        zombieController.mapMark.SetActive(false);
+
         StartCoroutine(DestroyAfterDelay());
     }
-
     private IEnumerator DestroyAfterDelay()
     {
         yield return new WaitForSeconds(15f);

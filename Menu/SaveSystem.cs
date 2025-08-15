@@ -2,6 +2,7 @@ using System.IO;
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using static Quests.Quest;
 
 [Serializable]
 public class InventorySlot
@@ -38,19 +39,35 @@ public class WeaponData
 {
     public List<AmmunitionData> ammunitionDatas = new List<AmmunitionData>();
 }
-[System.Serializable]
+[Serializable]
 public class LootSaveData
 {
     public string lootID;            // unikalny identyfikator obiektu lootu
     public List<ItemInLootData> items;
 }
 
-[System.Serializable]
+[Serializable]
 public class ItemInLootData
 {
-    public int itemID;               // ID przedmiotu (z ScriptableObject)
-    public int quantity;             // ile sztuk
+    public int itemID;   // ID przedmiotu (z ScriptableObject)
+    public int quantity; // ile sztuk
 }
+[Serializable]
+public class QuestData
+{
+    public int questID;
+    public int questStage;
+    public QuestState questState;
+
+    public Dictionary<string, int> ints = new();
+}
+
+[Serializable]
+public class QuestsSaveData
+{
+    public List<QuestData> questsData = new();
+}
+
 [Serializable]
 public class GameData
 {
@@ -58,7 +75,9 @@ public class GameData
     public PlayerData playerData;
     public WeaponData weaponData;
     public List<LootSaveData> lootSaveData;
+    public QuestsSaveData questsData;
 }
+
 public class SaveSystem
 {
     public void Save(GameData gameData)

@@ -20,11 +20,13 @@ public class GoToPointInWorld : MonoBehaviour
     {
         motionAnimations = GetComponent<BasicMotionAnimations>();
         agent = GetComponent<NavMeshAgent>();
+    }
 
+    private void Start()
+    {
         agent.SetDestination(destinationPoint.position);
         agent.isStopped = true;
     }
-
     void Update()
     {
         if (!goToPoint)

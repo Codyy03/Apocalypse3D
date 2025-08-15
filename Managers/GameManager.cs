@@ -1,16 +1,23 @@
-using System.Collections;
+using Quests;
+using System;
 using System.Collections.Generic;
-using TMPro;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.SocialPlatforms;
 using static LootController;
 
 public class GameManager : MonoBehaviour
 {
     public static bool UIElementIsOpen;
-    [SerializeField] List<GameObject> playerUIToOpen;
+
+    [Serializable]
+    public class UIElementsToOpen
+    {
+        public GameObject UIelement;
+        public KeyCode inputKey;
+    }
+
+    [SerializeField] List<UIElementsToOpen> playerUIToOpen;
+    GameObject currentActiveElement;
 
     public GameData gameData = new GameData();
 
@@ -24,106 +31,103 @@ public class GameManager : MonoBehaviour
     [SerializeField] AutomaticGunScriptLPFP assaultRifle;
     SaveSystem saveSystem = new SaveSystem();
 
-    List<LootSaveData> savedLoots = new();
-
+    [Header("Mapa")]
     [SerializeField] Camera mapCamera;
-    Camera playerCamera;
+    [SerializeField] GameObject map;
+
     bool mapWasOpen;
-    private void Start()
+
+    QuestManager questManager;
+    PlayerController playerController;
+    private void Awake()
     {
-        player = FindFirstObjectByType<PlayerController>().transform;
+        playerController = FindFirstObjectByType<PlayerController>();
+        player = playerController.transform;
         playerHealth = FindFirstObjectByType<PlayerHealth>();
         inventory = FindFirstObjectByType<Inventory>();
+        questManager = FindFirstObjectByType<QuestManager>();
     }
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape) && !InteractionController.lootIsOpen)
+        if (Input.GetKeyDown(KeyCode.Escape) && currentActiveElement != null)
         {
+            currentActiveElement.SetActive(false);
+            currentActiveElement = null;
             UIElementIsOpen = false;
-            Time.timeScale = 1.0f;
-
-            for (int i = 0; i < playerUIToOpen.Count; i++)
-            {
-                if (playerUIToOpen[i] != null && playerUIToOpen[i].activeInHierarchy)
-                {
-                    DisableAllUiCanvasElements();
-
-                    return;
-                }
-            }
-
-            ActivateObject(playerUIToOpen[1]);
+            HandleCursorAndTime(CursorLockMode.Locked, 1f);
+            return;
         }
+        else if(Input.GetKeyDown(KeyCode.Escape) && mapWasOpen)
+        {
+            DisableMap();
+            return;
+        }
+        for (int i = 0; i < playerUIToOpen.Count; i++)
+        {
+            UIElementsToOpen bind = playerUIToOpen[i];
+            if (Input.GetKeyDown(bind.inputKey))
+            {
+                // Czy panel ma byæ otwarty po naciœniêciu (toggle)?
+                bool willOpen = !bind.UIelement.activeSelf;
 
-        // element 0 - ekwipunek
-        // element 1 - menu
-        // elemeny 2 - mapa
-        // element 3 - misje
+                // Zamknij wszystkie panele
+                foreach (UIElementsToOpen e in playerUIToOpen)
+                    e.UIelement.SetActive(false);
 
-        if (Input.GetKeyDown(KeyCode.I))
-            ActivateObject(playerUIToOpen[0]);
+                // Otwórz docelowy tylko jeœli ma byæ otwarty
+                bind.UIelement.SetActive(willOpen);
 
+                if (willOpen)
+                {
+                    currentActiveElement = bind.UIelement;
+                    HandleCursorAndTime(CursorLockMode.None, 0f);
+                    UIElementIsOpen = true;
+                }
+                else
+                {
+                    UIElementIsOpen = false;
+                    currentActiveElement = null;
+                    HandleCursorAndTime(CursorLockMode.Locked, 1f);
+                }
+                break;
+            }
+        }
+        HandleMap();
+    }
+
+    void HandleMap()
+    {
         if (Input.GetKeyDown(KeyCode.M) && !mapWasOpen)
         {
-            ActivateObject(playerUIToOpen[2]);
-
-            playerCamera = Camera.main;
+            map.gameObject.SetActive(true);
             mapCamera.enabled = true;
+            HandleCursorAndTime(CursorLockMode.None, 0f);
+
             mapCamera.transform.position = new Vector3(player.position.x, mapCamera.transform.position.y, player.position.z);
-          //  playerCamera.gameObject.SetActive(false);
+
             mapWasOpen = true;
+            UIElementIsOpen = true;
         }
         else if (Input.GetKeyDown(KeyCode.M) && mapWasOpen)
         {
-            ActivateObject(playerUIToOpen[2]);
-           // playerCamera.gameObject.SetActive(true);
-            mapWasOpen = false;
-            mapCamera.enabled = false;
-        }
-
-        if(Input.GetKeyDown(KeyCode.J))
-        {
-            ActivateObject(playerUIToOpen[3]);
+            DisableMap();
         }
     }
-
-    public void ActivateObject(GameObject o)
+    void DisableMap()
     {
-        if (o == null) return;
+        map.gameObject.SetActive(false);
+        mapCamera.enabled = false;
+        HandleCursorAndTime(CursorLockMode.Locked, 1f);
 
-        if (!o.activeInHierarchy)
-        {
-            DisableAllUiCanvasElements();
-            
-            o.SetActive(true);
-
-            Time.timeScale = 0;
-            
-            Cursor.lockState = CursorLockMode.None;
-
-            UIElementIsOpen = true;
-            return;
-        }
-        else if (o.activeInHierarchy)
-        {
-            DisableAllUiCanvasElements();
-            Cursor.lockState = CursorLockMode.Locked;
-            Time.timeScale = 1;
-            UIElementIsOpen = false;
-            return;
-        }
+        UIElementIsOpen = false;
+        mapWasOpen = false;
     }
-    // zamyka wszystkie obiekty UI, które mozna otworzyc za pomoca klawiatury
-    void DisableAllUiCanvasElements()
+    void HandleCursorAndTime(CursorLockMode cursor, float timeScale)
     {
-        foreach (GameObject elements in playerUIToOpen)
-        {
-            if (elements != null)
-                elements.SetActive(false);
-        }
-        Cursor.lockState = CursorLockMode.Locked;
-    }
+        Cursor.lockState = cursor;
 
+        Time.timeScale = timeScale;
+    }
     public void SavePlayerStats()
     {
         PlayerData playerData = new PlayerData();
@@ -150,13 +154,12 @@ public class GameManager : MonoBehaviour
         gameData.weaponData = weaponData;
     }
 
-    [System.Obsolete]
     public void SaveLoot()
     {
         // Utwórz now¹ listê lootów
         gameData.lootSaveData = new List<LootSaveData>();
 
-        foreach (Loot loot in FindObjectsOfType<Loot>())
+        foreach (Loot loot in FindObjectsByType<Loot>(FindObjectsSortMode.None))
         {
             LootSaveData data = new LootSaveData
             {
@@ -176,25 +179,28 @@ public class GameManager : MonoBehaviour
             gameData.lootSaveData.Add(data); // dodajemy ka¿dy loot do listy
         }
     }
-
-
     private void OnLevelWasLoaded(int level)
     {
+        // Tutaj wklejasz logikê z OnLevelWasLoaded
         Cursor.lockState = CursorLockMode.Locked;
         Time.timeScale = 1;
         UIElementIsOpen = false;
+
+        if (Menu.loadGame)
+            LoadGame();
     }
 
-    [System.Obsolete]
     public void SaveGame()
     {
         inventory.SaveInventory();
         SavePlayerStats();
         SaveLoot();
+
+        gameData.questsData = questManager.SaveQuests();
+
         saveSystem.Save(gameData);
     }
 
-    [System.Obsolete]
     public void LoadGame()
     {
         gameData = saveSystem.LoadedData();
@@ -210,13 +216,18 @@ public class GameManager : MonoBehaviour
 
         assaultRifle.LoadAmmo(gameData.weaponData.ammunitionDatas[1].currentAmmunition, gameData.weaponData.ammunitionDatas[1].totalAmmunition);
 
+        if (playerController.noWeapons)
+            playerController.GetComponentInChildren<Gun>().HideWeapon();
+
         LoadLoot();
+
+        questManager.LoadQuests(gameData);
     }
 
-    [System.Obsolete]
+
     public void LoadLoot()
     {
-        foreach (Loot loot in FindObjectsOfType<Loot>())
+        foreach (Loot loot in FindObjectsByType<Loot>(FindObjectsSortMode.None))
         {
             LootSaveData saved = gameData.lootSaveData.Find(l => l.lootID == loot.lootID);
             if (saved == null) continue;

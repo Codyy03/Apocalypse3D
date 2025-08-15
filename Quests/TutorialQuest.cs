@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -6,9 +7,6 @@ namespace Quests
 {
     public class TutorialQuest : Quest
     {
-        [Header("Manager")]
-        [SerializeField] QuestManager questManager;
-
         [SerializeField] int deadEnemiesCounter;
 
         [Header("Postacie w zadaniu")]
@@ -24,30 +22,50 @@ namespace Quests
 
         [Header("Niezbêdne klasy")]
         [SerializeField] PlayerController playerController;
-        [SerializeField] Dialogues.Dialogue dialogue;
-        [SerializeField] Dialogues.DialoguesManager dialoguesManager;
+        BasicMotionAnimations basicMotion;
+        GoToPointInWorld goToPointInWorld;
 
         [Header("Dialogi")]
         [SerializeField] Dialogues.DialogueTextSO endQuestDialogue;
+        [SerializeField] Dialogues.DialoguesManager dialoguesManager;
+        [SerializeField] Dialogues.Dialogue dialogue;
 
-        BasicMotionAnimations basicMotion;
-        GoToPointInWorld goToPointInWorld;
-        bool listenerAdded = false;
+        Dictionary<int, Action<bool>> enter;
+        Dictionary<int, Action<bool>> exit;
 
-        private void Awake()
+        protected override void Awake()
         {
-            goToPointInWorld = npc.GetComponent<GoToPointInWorld>();
-            audioManager = FindFirstObjectByType<AudioManager>();
-            basicMotion = npc.GetComponent<BasicMotionAnimations>();
+            base.Awake();
 
-            if (!listenerAdded)
+            if (npc != null)
             {
+                goToPointInWorld = npc.GetComponent<GoToPointInWorld>();
+                basicMotion = npc.GetComponent<BasicMotionAnimations>();
+            }
+
+            enter = new()
+            {
+                {1, EnterStage1},
+                {2, EnterStage2},
+                {3, EnterStage3}
+            };
+
+            exit = new()
+            {
+                {1, ExitStage1},
+                {2, ExitStage2},
+                {3, ExitStage3}
+            };
+
+            if (endQuestDialogue != null)
+            {
+                // dla pewnosci ze jest dodany tylko raz
+                endQuestDialogue.dialogEvent.RemoveListener(EndQuest);
                 endQuestDialogue.dialogEvent.AddListener(EndQuest);
             }
         }
         private void Start()
         {
-
             if (state == QuestState.Inactive)
             {
                 UnityEvent unityEvent = new UnityEvent();
@@ -59,64 +77,97 @@ namespace Quests
                 dialoguesManager.StartDialogue(dialogue.dialogueStages[0].texts);
             }
         }
+        /// <summary>
+        /// Zacznij zadanie
+        /// </summary>
         public override void StartQuest()
         {
-            questStage = 1;
-            questManager.AddQuest(this);
-            state = QuestState.Active;
-            questPorgress = stages[0];
-            audioManager.PlayClip(startMission);
+            base.StartQuest();
 
+            StartTutorial();
+        }
+        /// <summary>
+        /// Akcja specyficzna dla tego zadania
+        /// </summary>
+        void StartTutorial()
+        {
             goToPointInWorld.SetGoToPoint(true);
-
             dialogue.conversationStage = 1;
 
-            foreach (var zombie in zombies)
-                zombie.SetMarkMapVisibility(true);
+            foreach (ZombieController zombie in zombies)
+                zombie?.SetMarkMapVisibility(true);
         }
+        protected override void OnStageEnter(int s, bool fromLoad)
+        {
+            if (enter.TryGetValue(s, out var enterStage)) enterStage(fromLoad);
+        }
+        protected override void OnStageExit(int s, bool fromLoad)
+        {
+            if (exit.TryGetValue(s, out var exitStage)) exitStage(fromLoad);
+        }
+
+        void EnterStage1(bool fromLoad)
+        {
+            StartTutorial();
+        }
+        void EnterStage2(bool fromLoad)
+        {
+            // Ustaw docelowy stan sceny dla etapu 2
+            if (basicMotion != null)
+                basicMotion.ChangeAnimation(basicMotion.death);
+
+            if (eatingZombie != null)
+                eatingZombie.SetActive(true);
+
+            if (npc != null)
+                npc.transform.position = new Vector3(-41.607f, 5.14f, 87.63f);
+
+            // Jeœli w etapie 2 NPC nadal ma iœæ do punktu, w³¹cz to:
+           // goToPointInWorld?.SetGoToPoint(true);
+
+            // DŸwiêk tylko przy normalnym przejœciu, nie przy wczytaniu
+            if (!fromLoad && screamSound != null)
+                audioManager?.PlayClip(screamSound);
+
+            if (!fromLoad) return;
+
+            foreach (ZombieController zombie in zombies)
+            {
+                Destroy(zombie.gameObject);
+            }
+            zombies.Clear();
+
+        }
+        void EnterStage3(bool fromLoad)
+        {
+            goToPointInWorld?.SetGoToPoint(false);
+            dialogue.conversationStage = 2; 
+        }
+        private void ExitStage1(bool fromLoad) 
+        {
+        }
+        private void ExitStage2(bool fromLoad)
+        {
+        }
+        private void ExitStage3(bool fromLoad) { }
 
         public override void EndQuest()
         {
-            state = QuestState.Completed;
-            audioManager.PlayClip(endMission);
-            questManager.QuestCompleted(this);
+            base.EndQuest();
 
             //npc umiera, koniec zadania
             npc.GetComponent<AudioSource>().PlayOneShot(dyingSound);
             dialogue.conversationStage = -1;
-        }
-
-        public override void UpdateQuest()
-        {
-            questStage++;
-            audioManager.PlayClip(updateMission);
-
-            switch (questStage)
-            {
-                case 2: HandeFirstQuestStage(); break;
-                case 3: HandeSecondQuestStage(); break;
-            }
-            questManager.UpdateQuest();
-        }
-        void HandeFirstQuestStage()
-        {
-            questPorgress = stages[1]; basicMotion.ChangeAnimation((basicMotion.death));
-            eatingZombie.SetActive(true); npc.transform.position = new Vector3(-41.607f, 5.14f, 87.63f);
-            audioManager.PlayClip(screamSound);
-        }
-        void HandeSecondQuestStage()
-        {
-            questPorgress = stages[2];
         }
         public void IncreseDeadEnemiesCounter()
         {
             deadEnemiesCounter++;
 
             questPorgress = $"Zabij zombie {deadEnemiesCounter}/3";
-            questManager.UpdateQuest();
+            questManager.NotifyQuestUpdated(this);
 
             if (deadEnemiesCounter == 3)
-                UpdateQuest();
+                AdvanceStage();
         }
         private void OnTriggerEnter(Collider other)
         {
@@ -125,7 +176,7 @@ namespace Quests
             if (other.CompareTag("Player"))
             {
                 dialogue.SetConversationStage(2);
-                UpdateQuest();
+                AdvanceStage();
             }
         }
     }
