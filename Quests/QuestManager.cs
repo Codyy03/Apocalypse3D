@@ -30,7 +30,7 @@ namespace Quests
         {
             if (!activeQuests.Contains(quest))
                 activeQuests.Add(quest);
-            
+
             SetActiveQuest(quest);
             OnQuestActivated?.Invoke(quest);
         }
@@ -132,7 +132,7 @@ namespace Quests
                 loaded.SetStage(Mathf.Max(1, questData.questStage), fromLoad: true);
 
                 // Poka¿ w UI
-                OnQuestAdded?.Invoke(loaded);
+                OnQuestActivated?.Invoke(loaded);
             }
 
             // Jeœli mamy ustawiony currentQuest, odœwie¿ jego opis w UI

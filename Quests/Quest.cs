@@ -30,8 +30,8 @@ namespace Quests
         public string[] stages;
 
         [Header("Opis w UI")]
-        [TextArea]
-        public string questDescriptions;
+        [TextArea] public string questDescriptions;
+        [TextArea] public string onEndQuestDescriptions;
 
         public QuestType questType;
 

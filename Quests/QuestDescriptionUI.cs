@@ -12,15 +12,25 @@ namespace Quests
         [SerializeField] TextMeshProUGUI questName;
         [SerializeField] QuestManager questManager;
         [SerializeField] QuestUIController questUIController;
-       public Button followQuestButton;
+        Button followQuestButton;
 
         private void Awake()
         {
             questManager = FindFirstObjectByType<QuestManager>();
+            questUIController = FindFirstObjectByType<QuestUIController>();
         }
         public void OnPointerClick(PointerEventData eventData)
         {
-            DisplayQuestDescription.Instance.SetQuestData(quest.questName, quest.questDescriptions, quest.questPorgress);
+            string questProgress = "";
+
+            if (quest.state == Quest.QuestState.Active)
+                questProgress = quest.questPorgress;
+            else
+                questProgress = quest.onEndQuestDescriptions;
+
+            DisplayQuestDescription.Instance.SetQuestData(quest.questName, quest.questDescriptions, questProgress);
+
+            if (quest.state == Quest.QuestState.Completed) return;
 
             // znajduje przycisk, œledz / przestañ œledziæ zadania 
             if (followQuestButton == null)
@@ -33,8 +43,11 @@ namespace Quests
             followQuestButton.onClick.AddListener(() =>
             {
                 questManager.SetActiveQuest(quest);
+                questUIController.SetCurrentQuestActivity(quest.isActive);
+
             });
 
+            
             questUIController.SetCurrentQuestActivity(quest.isActive);
         }
 

@@ -12,9 +12,13 @@ namespace Quests
 
         [Tooltip("Text który przedstawia œledz/ przestañ œledziæ")]
         [SerializeField] TextMeshProUGUI currentActivityText;
+
+        [SerializeField] GameObject questPrefab;
+        [SerializeField] Transform questList;
         private void OnEnable()
         {
             questManager.OnQuestActivated += ShowQuest;
+            questManager.OnQuestActivated += UpdateMissionList;
             questManager.OnQuestUpdated += UpdateQuestUI;
             questManager.OnQuestDeactivated += HideQuest;
             questManager.OnQuestCompleted += HideQuest;
@@ -34,7 +38,7 @@ namespace Quests
             questPurpose.text = quest.stages != null && quest.stages.Length > 0
                                 ? quest.stages[0]
                                 : quest.questPorgress;
-            gameObject.SetActive(true);
+            SetCurrentQuestUIState(true);
         }
 
         private void UpdateQuestUI(Quest quest)
@@ -42,10 +46,19 @@ namespace Quests
             if (questManager.currentQuest == quest)
                 questPurpose.text = quest.questPorgress;
         }
+        public void UpdateMissionList(Quest quest)
+        {
+            QuestDescriptionUI questDescriptionUI = Instantiate(questPrefab, questList).GetComponent<QuestDescriptionUI>();
+            questDescriptionUI.quest = quest;
+            questDescriptionUI.SetQuestName();
+
+            questManager.OnQuestActivated -= UpdateMissionList;
+        }
 
         private void HideQuest(Quest quest)
         {
-            gameObject.SetActive(false);
+            SetCurrentQuestUIState(false);
+
         }
         public void SetCurrentQuestUIState(bool state) => transform.GetChild(0).gameObject.SetActive(state);
         public void SetCurrentQuestActivity(bool questState) => currentActivityText.text = questState ? "Dezaktywuj" : "Aktywuj";
