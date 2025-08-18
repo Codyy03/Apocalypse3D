@@ -35,10 +35,13 @@ public class EnemyHealth : MonoBehaviour
     {
         sources = GetComponents<AudioSource>();
     }
+    /// <summary>
+    /// zmieñ poziom ¿ycia zombie
+    /// </summary>
+    /// <param name="value">wartoœæ ¿ycia do zmiany</param>
     public void ChangeHealth(float value)
     {
         health = Mathf.Clamp(health + value, 0f, maxHealth);
-      //  Debug.Log(health);
         if (health <= 0f)
         {
             HandleDeath();
@@ -50,6 +53,9 @@ public class EnemyHealth : MonoBehaviour
             zombieController.TriggerHitAnimation();
         }
     }
+    /// <summary>
+    /// obs³u¿ œmieræ zombie, gdzie ¿ycie >= 0
+    /// </summary>
     private void HandleDeath()
     {
         agent.enabled = false;
@@ -72,6 +78,10 @@ public class EnemyHealth : MonoBehaviour
 
         StartCoroutine(DestroyAfterDelay());
     }
+    /// <summary>
+    /// poczekaj 15 sekund nastepnie zniszcz obiekt zombie
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator DestroyAfterDelay()
     {
         yield return new WaitForSeconds(15f);

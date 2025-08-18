@@ -51,10 +51,7 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Escape) && currentActiveElement != null)
         {
-            currentActiveElement.SetActive(false);
-            currentActiveElement = null;
-            UIElementIsOpen = false;
-            HandleCursorAndTime(CursorLockMode.Locked, 1f);
+            DisableUIElement();
             return;
         }
         else if(Input.GetKeyDown(KeyCode.Escape) && mapWasOpen)
@@ -62,6 +59,14 @@ public class GameManager : MonoBehaviour
             DisableMap();
             return;
         }
+        ElementsController();
+        HandleMap();
+    }
+    /// <summary>
+    /// kontroler elementów UI
+    /// </summary>
+    void ElementsController()
+    {
         for (int i = 0; i < playerUIToOpen.Count; i++)
         {
             UIElementsToOpen bind = playerUIToOpen[i];
@@ -92,9 +97,10 @@ public class GameManager : MonoBehaviour
                 break;
             }
         }
-        HandleMap();
     }
-
+    /// <summary>
+    /// zarz¹dza map¹
+    /// </summary>
     void HandleMap()
     {
         if (Input.GetKeyDown(KeyCode.M) && !mapWasOpen)
@@ -113,6 +119,9 @@ public class GameManager : MonoBehaviour
             DisableMap();
         }
     }
+    /// <summary>
+    /// wy³¹cz mape
+    /// </summary>
     void DisableMap()
     {
         map.gameObject.SetActive(false);
@@ -122,12 +131,30 @@ public class GameManager : MonoBehaviour
         UIElementIsOpen = false;
         mapWasOpen = false;
     }
+    /// <summary>
+    /// zarz¹dza stanem kursora i czasem
+    /// </summary>
+    /// <param name="cursor">status kursora</param>
+    /// <param name="timeScale">czas</param>
     void HandleCursorAndTime(CursorLockMode cursor, float timeScale)
     {
         Cursor.lockState = cursor;
 
         Time.timeScale = timeScale;
     }
+    /// <summary>
+    /// wy³¹cz obecnie aktywny element UI
+    /// </summary>
+    public void DisableUIElement()
+    {
+        currentActiveElement.SetActive(false);
+        currentActiveElement = null;
+        UIElementIsOpen = false;
+        HandleCursorAndTime(CursorLockMode.Locked, 1f);
+    }
+    /// <summary>
+    /// zapisz dane gracza
+    /// </summary>
     public void SavePlayerStats()
     {
         PlayerData playerData = new PlayerData();
@@ -153,7 +180,9 @@ public class GameManager : MonoBehaviour
 
         gameData.weaponData = weaponData;
     }
-
+    /// <summary>
+    /// zapisz stan loot'u
+    /// </summary>
     public void SaveLoot()
     {
         // Utwórz now¹ listê lootów
@@ -179,7 +208,7 @@ public class GameManager : MonoBehaviour
             gameData.lootSaveData.Add(data); // dodajemy ka¿dy loot do listy
         }
     }
-    private void OnLevelWasLoaded(int level)
+    void OnLevelWasLoaded(int level)
     {
         // Tutaj wklejasz logikê z OnLevelWasLoaded
         Cursor.lockState = CursorLockMode.Locked;
@@ -189,7 +218,9 @@ public class GameManager : MonoBehaviour
         if (Menu.loadGame)
             LoadGame();
     }
-
+    /// <summary>
+    /// zapisz gre
+    /// </summary>
     public void SaveGame()
     {
         inventory.SaveInventory();
@@ -200,7 +231,9 @@ public class GameManager : MonoBehaviour
 
         saveSystem.Save(gameData);
     }
-
+    /// <summary>
+    /// wczytaj grê
+    /// </summary>
     public void LoadGame()
     {
         gameData = saveSystem.LoadedData();
@@ -223,8 +256,9 @@ public class GameManager : MonoBehaviour
 
         questManager.LoadQuests(gameData);
     }
-
-
+    /// <summary>
+    /// wczytaj stan loot'u
+    /// </summary>
     public void LoadLoot()
     {
         foreach (Loot loot in FindObjectsByType<Loot>(FindObjectsSortMode.None))

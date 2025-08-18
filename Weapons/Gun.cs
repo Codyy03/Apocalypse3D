@@ -8,6 +8,8 @@ public abstract class Gun : MonoBehaviour
     // weapon damage when hit enemy
     public float damage;
 
+    public float weaponNoiseRange;
+
     public GameObject bloodPrefab;
 
     //Holstering weapon
@@ -47,6 +49,7 @@ public abstract class Gun : MonoBehaviour
         if (Physics.Raycast(mainCamera.transform.position, mainCamera.transform.forward, out hit))
         {
             float currentDamage = damage;
+            NoiseSystem.MakeNoise(transform.position, weaponNoiseRange);
             if (hit.collider.gameObject.layer == LayerMask.NameToLayer("Enemy"))
             {
                 Transform boneHit = hit.collider.transform;
@@ -64,6 +67,8 @@ public abstract class Gun : MonoBehaviour
         //Toggle weapon holster when pressing tab key
         if (Input.GetKeyDown(KeyCode.Tab) && !playerController.noWeapons)
         {
+            CrosshairController.ControllCroshair(holstered);
+
             holstered = !holstered; // prze³¹czanie stanu
 
             mainAudioSource.clip = holstered ? SoundClips.holsterSound : SoundClips.takeOutSound;
@@ -72,24 +77,37 @@ public abstract class Gun : MonoBehaviour
             hasBeenHolstered = holstered;
         }
     }
+    /// <summary>
+    /// schowaj obecnie wybran¹ broñ
+    /// </summary>
     public void HideWeapon()
     {
         holstered = true;
         mainAudioSource.clip = SoundClips.holsterSound;
         mainAudioSource.Play();
 
+        CrosshairController.ControllCroshair(false);
+
         anim.SetBool("Holster", true);
         hasBeenHolstered = true;
     }
+    /// <summary>
+    /// poka¿ obecnie wybran¹ broñ
+    /// </summary>
     public void ShowWeapon()
     {
         holstered = false;
         mainAudioSource.clip = SoundClips.takeOutSound;
         mainAudioSource.Play();
 
+        CrosshairController.ControllCroshair(true);
+
         anim.SetBool("Holster", false);
         hasBeenHolstered = false;
+
+
     }
+
     public void EnbleAttackPoint() => attackPoint.SetActive(true);
     public void DisableAttackPoint() => attackPoint.SetActive(false);
 

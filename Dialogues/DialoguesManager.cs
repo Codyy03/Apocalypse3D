@@ -58,6 +58,10 @@ namespace Dialogues
                 }
             }
         }
+        /// <summary>
+        /// Rozpocznij dialog
+        /// </summary>
+        /// <param name="texts">lista dialogów</param>
         public void StartDialogue(List<DialogueTextSO> texts)
         {
             if (dialogueIsActive) return;
@@ -99,6 +103,9 @@ namespace Dialogues
 
             ShowDialogue(currentDialogue[currentTextIndex]);
         }
+        /// <summary>
+        /// wyœwietla kolejny dialog lub zakañcza gdy jest ostatni
+        /// </summary>
         public void NextDialogue()
         {
             RemoveChoiceButtons();
@@ -113,6 +120,10 @@ namespace Dialogues
 
             ShowDialogue(currentDialogue[currentTextIndex]);
         }
+        /// <summary>
+        /// pokazuje obecny dialog
+        /// </summary>
+        /// <param name="textData">dialog do wyœwietlania</param>
         void ShowDialogue(DialogueTextSO textData)
         {
             currentText = textData.dialogue;
@@ -183,6 +194,9 @@ namespace Dialogues
                 createdButtons[i].GetComponent<Button>().navigation = nav;
             }
         }
+        /// <summary>
+        /// usuwa przyciski opcji dialogowych
+        /// </summary>
         void RemoveChoiceButtons()
         {
             foreach (Transform child in dialogueChoicesContener.transform)
@@ -191,6 +205,9 @@ namespace Dialogues
             }
             firstButton = null;
         }
+        /// <summary>
+        /// koñczy obecny dialog
+        /// </summary>
         public void EndDialogue()
         {
             RemoveChoiceButtons();
@@ -219,9 +236,6 @@ namespace Dialogues
             EventSystem.current.SetSelectedGameObject(button);
         }
 
-        public void SetOnStageEvent(UnityEvent unityEvent)
-        {
-            onStageEnd = unityEvent;
-        }
+        public void SetOnStageEvent(UnityEvent unityEvent) => onStageEnd = unityEvent;
     }
 }

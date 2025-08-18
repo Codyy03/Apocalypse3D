@@ -77,26 +77,22 @@ public class GameData
     public List<LootSaveData> lootSaveData;
     public QuestsSaveData questsData;
 }
-
 public class SaveSystem
 {
     public void Save(GameData gameData)
     {
         string json = JsonUtility.ToJson(gameData);
-        File.WriteAllText(Application.dataPath + "/save.json", json);
-
+        string path = Path.Combine(Application.persistentDataPath, "save.json");
+        File.WriteAllText(path, json);
     }
     public GameData LoadedData()
     {
-        string path = Application.dataPath + "/save.json";
+        string path = Path.Combine(Application.persistentDataPath, "save.json");
 
         if (!File.Exists(path))
             return null;
 
         string json = File.ReadAllText(path);
-
-        GameData data = JsonUtility.FromJson<GameData>(json);
-
-        return data;
+        return JsonUtility.FromJson<GameData>(json);
     }
 }

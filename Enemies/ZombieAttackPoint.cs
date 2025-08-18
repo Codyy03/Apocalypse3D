@@ -1,26 +1,24 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ZombieAttackPoint : MonoBehaviour
 {
-    public LayerMask playerLayer;
-    public float radius=1f,damage;
+    [SerializeField] LayerMask playerLayer;
+    [SerializeField] float radius=1f,damage;
 
-
-    // Update is called once per frame
     void Update()
     {
         AddDamage();
     }
+
+    /// <summary>
+    /// zadaj obra¿enia graczowi
+    /// </summary>
     void AddDamage()
     {
         Collider[] hit = Physics.OverlapSphere(transform.position, radius, playerLayer);
         if(hit.Length>0)
         {
-           
             hit[0].GetComponent<PlayerHealth>().ChangePlayerHealth(-damage);
-
             gameObject.SetActive(false);
         }
     }

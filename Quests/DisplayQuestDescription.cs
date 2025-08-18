@@ -9,6 +9,12 @@ public class DisplayQuestDescription : MonoBehaviour
     {
         Instance = this;
     }
+    /// <summary>
+    /// aktualizuje informacje o zadaniu w dzienniku zadañ
+    /// </summary>
+    /// <param name="questName">nazwa zadania</param>
+    /// <param name="questDescription">pocz¹tkowy opis zadania</param>
+    /// <param name="currentQuestPurpose">opis celu zadania</param>
     public void SetQuestData(string questName, string questDescription, string currentQuestPurpose)
     {
         questNameText.text = questName;

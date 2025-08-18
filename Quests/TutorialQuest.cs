@@ -25,14 +25,18 @@ namespace Quests
         BasicMotionAnimations basicMotion;
         GoToPointInWorld goToPointInWorld;
 
+        [Header("Znaczniki na mapie")]
+        [SerializeField] GameObject npcMapMark;
+        [SerializeField] GameObject bandageMapMark;
+
         [Header("Dialogi")]
         [SerializeField] Dialogues.DialogueTextSO endQuestDialogue;
         [SerializeField] Dialogues.DialoguesManager dialoguesManager;
         [SerializeField] Dialogues.Dialogue dialogue;
 
-        Dictionary<int, Action<bool>> enter;
-        Dictionary<int, Action<bool>> exit;
-
+        readonly int requireDeadEnemies = 3;
+        readonly int requireConversationStageToActivateOnTrigger = 4;
+        readonly Vector3 teleportDestination = new Vector3(-41.607f, 5.14f, 87.63f);
         protected override void Awake()
         {
             base.Awake();
@@ -43,19 +47,11 @@ namespace Quests
                 basicMotion = npc.GetComponent<BasicMotionAnimations>();
             }
 
-            enter = new()
-            {
-                {1, EnterStage1},
-                {2, EnterStage2},
-                {3, EnterStage3}
-            };
-
-            exit = new()
-            {
-                {1, ExitStage1},
-                {2, ExitStage2},
-                {3, ExitStage3}
-            };
+            RegisterStage(1, EnterStage1, ExitStage1);
+            RegisterStage(2, EnterStage2, ExitStage2);
+            RegisterStage(3, EnterStage3, ExitStage3);
+            RegisterStage(4, EnterStage4, ExitStage4);
+            RegisterStage(5, EnterStage5, ExitStage5);
 
             if (endQuestDialogue != null)
             {
@@ -64,6 +60,7 @@ namespace Quests
                 endQuestDialogue.dialogEvent.AddListener(EndQuest);
             }
         }
+
         private void Start()
         {
             if (state == QuestState.Inactive)
@@ -106,24 +103,32 @@ namespace Quests
             if (exit.TryGetValue(s, out var exitStage)) exitStage(fromLoad);
         }
 
+        // zaczyna questa
         void EnterStage1(bool fromLoad)
         {
             StartTutorial();
         }
+        // zombie zosta³y zabite, gracz wraca
         void EnterStage2(bool fromLoad)
         {
-            // Ustaw docelowy stan sceny dla etapu 2
-            if (basicMotion != null)
-                basicMotion.ChangeAnimation(basicMotion.death);
+            dialogue.IncreaseConversationStage();
+        }
+        // gracz wróci³ i musi isæ po banda¿e
+        void EnterStage3(bool fromLoad)
+        {
+            bandageMapMark.SetActive(true);
+            npcMapMark.SetActive(false);
 
+            if (fromLoad)
+                DestroyZombies();
+        }
+        // gracz wzi¹³ banda¿e, musi sprawdziæ co sie sta³o
+        void EnterStage4(bool fromLoad)
+        {
             if (eatingZombie != null)
                 eatingZombie.SetActive(true);
 
-            if (npc != null)
-                npc.transform.position = new Vector3(-41.607f, 5.14f, 87.63f);
-
-            // Jeœli w etapie 2 NPC nadal ma iœæ do punktu, w³¹cz to:
-           // goToPointInWorld?.SetGoToPoint(true);
+            KillNpcAtDestination();
 
             // DŸwiêk tylko przy normalnym przejœciu, nie przy wczytaniu
             if (!fromLoad && screamSound != null)
@@ -131,52 +136,80 @@ namespace Quests
 
             if (!fromLoad) return;
 
-            foreach (ZombieController zombie in zombies)
-            {
-                Destroy(zombie.gameObject);
-            }
-            zombies.Clear();
-
+            DestroyZombies();
         }
-        void EnterStage3(bool fromLoad)
+        // gracz zobaczy³ co sie sta³o
+        void EnterStage5(bool fromLoad)
         {
             goToPointInWorld?.SetGoToPoint(false);
-            dialogue.conversationStage = 2; 
+            dialogue.IncreaseConversationStage();
+
+            if (!fromLoad) return;
+
+            DestroyZombies();
+
+            if (npc != null)
+            {
+                KillNpcAtDestination();
+                dialogue.EndConversation();
+            }
         }
         private void ExitStage1(bool fromLoad) 
         {
+            npcMapMark.SetActive(true);
         }
         private void ExitStage2(bool fromLoad)
         {
+            npcMapMark.SetActive(false);
         }
-        private void ExitStage3(bool fromLoad) { }
+        private void ExitStage3(bool fromLoad) {
 
+            npcMapMark.SetActive(true);
+            bandageMapMark.SetActive(false);
+        }
+        private void ExitStage4(bool fromLoad) { }
+        private void ExitStage5(bool fromLoad) { }
         public override void EndQuest()
         {
             base.EndQuest();
 
             //npc umiera, koniec zadania
-            npc.GetComponent<AudioSource>().PlayOneShot(dyingSound);
-            dialogue.conversationStage = -1;
+            if (npc != null)
+                npc.GetComponent<AudioSource>()?.PlayOneShot(dyingSound);
+
+            dialogue.EndConversation();
         }
-        public void IncreseDeadEnemiesCounter()
+        public void IncreaseDeadEnemiesCounter()
         {
             deadEnemiesCounter++;
 
             questPorgress = $"Zabij zombie {deadEnemiesCounter}/3";
             questManager.NotifyQuestUpdated(this);
 
-            if (deadEnemiesCounter == 3)
+            if (deadEnemiesCounter == requireDeadEnemies)
                 AdvanceStage();
         }
         private void OnTriggerEnter(Collider other)
         {
-            if (questStage != 2) return;
+            if (questStage != requireConversationStageToActivateOnTrigger) return;
 
             if (other.CompareTag("Player"))
-            {
-                dialogue.SetConversationStage(2);
                 AdvanceStage();
+        }
+        void DestroyZombies()
+        {
+            foreach (ZombieController zombie in zombies)
+            {
+                Destroy(zombie?.gameObject);
+            }
+            zombies.Clear();
+        }
+        void KillNpcAtDestination()
+        {
+            if (npc != null)
+            {
+                npc.transform.position = teleportDestination;
+                basicMotion?.ChangeAnimation(basicMotion.death);
             }
         }
     }

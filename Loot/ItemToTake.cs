@@ -63,23 +63,16 @@ public class ItemToTake : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
         itemDescriptionText.text = tag + " / " + quality;
     }
 
-    public void OnPointerExit(PointerEventData eventData)
-    {
-        higtlight.SetActive(false);
-
-    }
-
+    public void OnPointerExit(PointerEventData eventData) => higtlight.SetActive(false);
     public void OnPointerEnter(PointerEventData eventData)
     {
         higtlight.SetActive(true);
+
         if (transform.GetSiblingIndex() != 0)
             transform.parent.GetChild(0).GetChild(4).gameObject.SetActive(false);
 
         InteractionController.currentChild = transform.GetSiblingIndex();
     }
 
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        interactionController.TakeOneItem();
-    }
+    public void OnPointerClick(PointerEventData eventData) => interactionController.TakeOneItem();
 }

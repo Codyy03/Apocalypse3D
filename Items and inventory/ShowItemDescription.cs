@@ -16,7 +16,6 @@ public class ShowItemDescription : MonoBehaviour, IPointerEnterHandler, IPointer
     }
 
     readonly float ScreenX = 0.2f;
-    readonly float ScreenY = 0.125f;
 
     Image slotImage;
     [Tooltip("Domyœlny sprite")]

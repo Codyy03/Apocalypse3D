@@ -1,4 +1,5 @@
 using NUnit.Framework.Interfaces;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -49,11 +50,18 @@ namespace Quests
 
         [Header("Manager")]
         [SerializeField] protected QuestManager questManager;
+
+        protected Dictionary<int, Action<bool>> enter = new();
+        protected Dictionary<int, Action<bool>> exit = new();
         protected virtual void Awake()
         {
             audioManager = FindFirstObjectByType<AudioManager>();
         }
-
+        protected void RegisterStage(int stage, Action<bool> onEnter, Action<bool> onExit)
+        {
+            if (onEnter != null) enter[stage] = onEnter;
+            if (onExit != null) exit[stage] = onExit;
+        }
         public virtual void StartQuest()
         {
             state = QuestState.Active;
@@ -104,9 +112,6 @@ namespace Quests
                 audioManager?.PlayClip(endMission);
 
             questManager?.QuestCompleted(this);
-
         }
     }
 }
-
-

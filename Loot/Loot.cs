@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using static LootController;
 
 [RequireComponent(typeof(LootIDAssignerZ))]

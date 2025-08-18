@@ -31,38 +31,44 @@ public class GoToPointInWorld : MonoBehaviour
     {
         if (!goToPoint)
         {
-            agent.isStopped = true;
-
-            if(!targetIsAchive)
-                motionAnimations.ChangeAnimation(motionAnimations.idle);
-
+            HandleIdle();
             return;
         }
 
         if(Dialogues.DialoguesManager.dialogueIsActive)
         {
-            agent.isStopped = true;
-
-            // Oblicz kierunek od NPC do gracza (wektor ró¿nicy pozycji)
-            Vector3 direction = (player.position - transform.position).normalized;
-
-            // Ustaw komponent Y na 0, by nie obracaæ NPC w pionie (np. nie patrzy³ w górê/dó³)
-            direction.y = 0f;
-
-            // SprawdŸ, czy kierunek nie jest zerowy (czyli gracz nie stoi dok³adnie w tym samym miejscu co NPC)
-            if (direction != Vector3.zero)
-            { 
-                // Oblicz rotacjê w kierunku gracza
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
-
-                // P³ynnie obróæ NPC w stronê gracza z u¿yciem interpolacji sferycznej (Slerp)
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
-            }
-
-            motionAnimations.ChangeAnimation(motionAnimations.idle);
+            TurnTowardsPlayer();
             return;
-            
         }
+        HandleWalking();
+    }
+    /// <summary>
+    /// Obróæ npc twarz¹ do gracza
+    /// </summary>
+    void TurnTowardsPlayer()
+    {
+        agent.isStopped = true;
+
+        // Oblicz kierunek od NPC do gracza (wektor ró¿nicy pozycji)
+        Vector3 direction = (player.position - transform.position).normalized;
+
+        // Ustaw komponent Y na 0, by nie obracaæ NPC w pionie (np. nie patrzy³ w górê/dó³)
+        direction.y = 0f;
+
+        // SprawdŸ, czy kierunek nie jest zerowy (czyli gracz nie stoi dok³adnie w tym samym miejscu co NPC)
+        if (direction != Vector3.zero)
+        {
+            // Oblicz rotacjê w kierunku gracza
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+
+            // P³ynnie obróæ NPC w stronê gracza z u¿yciem interpolacji sferycznej (Slerp)
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
+        }
+
+        motionAnimations.ChangeAnimation(motionAnimations.idle);
+    }
+    void HandleWalking()
+    {
         agent.isStopped = false;
 
         if (agent.remainingDistance >= stopingDistance)
@@ -71,7 +77,7 @@ public class GoToPointInWorld : MonoBehaviour
         }
         else
         {
-            if(!string.IsNullOrEmpty(achiveTargetAnimation))
+            if (!string.IsNullOrEmpty(achiveTargetAnimation))
                 motionAnimations.ChangeAnimation(achiveTargetAnimation);
 
             targetIsAchive = true;
@@ -80,6 +86,13 @@ public class GoToPointInWorld : MonoBehaviour
         }
     }
 
+    void HandleIdle()
+    {
+        agent.isStopped = true;
+
+        if (!targetIsAchive)
+            motionAnimations.ChangeAnimation(motionAnimations.idle);
+    }
     public void SetGoToPoint(bool value) => goToPoint = value;
 
 }

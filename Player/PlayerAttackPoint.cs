@@ -21,7 +21,6 @@ public class PlayerAttackPoint : MonoBehaviour
     private void Update()
     {
        Attack();
-       
     }
     public void Attack()
     {

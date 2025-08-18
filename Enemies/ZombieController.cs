@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -8,6 +7,7 @@ public class ZombieController : MonoBehaviour
 {
     [Tooltip("Jak daleko ma sie znajdowaæ od gracza aby szed³ w jego strone")]
     [SerializeField] float distanceToWalk;
+    float defaultDistanceToWalk;
 
     [Tooltip("Jak daleko ma sie znajdowaæ od gracza aby atakowa³")]
     [SerializeField] float distanceToAttack;
@@ -40,6 +40,8 @@ public class ZombieController : MonoBehaviour
 
     float walkSpeed;
     [SerializeField] float runningSpeed;
+
+    [SerializeField] float noiseAlertDuration = 5f;
 
     bool isHit = false;
     float hitDuration = 0f;
@@ -81,6 +83,8 @@ public class ZombieController : MonoBehaviour
         walkSpeed = agent.speed;
 
         agent.updateRotation = false;
+
+        defaultDistanceToWalk = distanceToWalk;
     }
     void Update()
     {
@@ -169,6 +173,38 @@ public class ZombieController : MonoBehaviour
                 StartCoroutine(FadeOutAudio(walkAudioSource, fadeDuration));
             }
         }
+    }
+    private void OnEnable()
+    {
+        NoiseSystem.OnNoise += ReactToNoise;
+    }
+    private void OnDisable()
+    {
+        NoiseSystem.OnNoise -= ReactToNoise;
+    }
+    void ReactToNoise(Vector3 noisePosition, float noiseRange)
+    {
+        float dist =Vector3.Distance(transform.position, noisePosition);
+
+        if (dist <= noiseRange)
+        {
+            // zwieksza tymczasowo zasieg widzenia
+            distanceToWalk = Mathf.Max(distanceToWalk, noiseRange);
+
+            // ustawia cel pod¹¿ania na punkt dzwiêku
+            agent.SetDestination(noisePosition);
+
+            StartCoroutine(NoiseAlertRoutine(noiseRange));
+        }
+    }
+    IEnumerator NoiseAlertRoutine(float newDistance)
+    {
+        distanceToWalk = newDistance;
+
+        yield return new WaitForSeconds(noiseAlertDuration);
+
+        distanceToWalk = defaultDistanceToWalk;
+
     }
     void PlayWalkSound(AudioClip sound)
     {

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.Events;
 public class LootController : MonoBehaviour
 {
     public GameObject lootPanel;
@@ -13,6 +14,7 @@ public class LootController : MonoBehaviour
     {
         public Item item;
         public int quantity;
+        public UnityEvent onLootTaken;
     }
 
     private void Update()
@@ -24,6 +26,10 @@ public class LootController : MonoBehaviour
             contentParent.GetChild(0).transform.GetChild(4).gameObject.SetActive(true);
         }
     }
+    /// <summary>
+    /// Wyœwietl liste przedmiotów do zebrania
+    /// </summary>
+    /// <param name="items">lista przedmiotów do zebrania</param>
     public void ShowLoot(List<ItemInLoot> items)
     {
         lootPanel.SetActive(true);
@@ -39,9 +45,11 @@ public class LootController : MonoBehaviour
             slot.GetComponent<ItemToTake>().Setup(itemToTake.item, itemToTake.quantity);
             lootItems.Add(slot);
         }
-
     }
-    
+    /// <summary>
+    /// sprawdz czy któryœ z przedmiotów jest zaznaczony
+    /// </summary>
+    /// <returns>zaznaczony/niezaznaczony</returns>
     public bool CheckHighlightStatus()
     {
         for(int i = 0; i< contentParent.childCount; i++)

@@ -2,10 +2,13 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
+using TMPro;
 
 public class LoadingManager : MonoBehaviour
 {
-    public Slider progressBar; 
+    [SerializeField] Slider progressBar;
+    [SerializeField] TextMeshProUGUI progressText;
+    
 
     void Start() => StartCoroutine(LoadSceneAsync());
 
@@ -16,6 +19,9 @@ public class LoadingManager : MonoBehaviour
         {
             if (progressBar)
                 progressBar.value = Mathf.Clamp01(operation.progress / 0.9f);
+
+            if (progressText)
+                progressText.text = Mathf.RoundToInt(operation.progress * 100f) + "%";
             yield return null;
         }
     }

@@ -22,6 +22,7 @@ public class InteractionController : MonoBehaviour
 
     int howManyItems;
     [SerializeField] Inventory inventory;
+    [SerializeField] GameObject pickupPromptUI;
     AudioManager audioManager;
     private void Awake()
     {
@@ -47,12 +48,19 @@ public class InteractionController : MonoBehaviour
         // WeŸ wszystko klawiszem X
         else if (Input.GetKeyDown(KeyCode.X) && lootController.lootPanel.activeInHierarchy)
         {
+            int i = 0;
+
             while (loot.items.Count > 0)
             {
                 var currentLoot = loot.items[0];
                 inventory.CreateManyItems(currentLoot.item, currentLoot.quantity);
+
+                loot.items[i].onLootTaken?.Invoke();
+
                 loot.items.RemoveAt(0);
                 Destroy(lootController.contentParent.GetChild(0).gameObject);
+
+                i++;
             }
             audioManager.PlayClip(takeAllSound);
             TookItems();
@@ -74,17 +82,29 @@ public class InteractionController : MonoBehaviour
             DisableLootUI();
         }
     }
+
+    /// <summary>
+    /// Bierze obecenie zaznaczony loot z wyœwietlanej listy
+    /// </summary>
     public void TakeOneItem()
     {
         inventory.CreateManyItems(loot.items[currentChild].item, loot.items[currentChild].quantity);
+
+        loot.items[currentChild].onLootTaken?.Invoke();
+
         loot.items.RemoveAt(currentChild);
+        
         Destroy(lootController.contentParent.GetChild(currentChild).gameObject);
         howManyItems--;
+        
         audioManager.PlayClip(takeSound);
 
         if (howManyItems == 0)
             TookItems();
     }
+    /// <summary>
+    /// Bierze wszystkie przedmioty z listy wyœwietlanego lootu
+    /// </summary>
     void TookItems()
     {
         playerInItemSphere = false;
@@ -95,7 +115,7 @@ public class InteractionController : MonoBehaviour
         else if(loot != null && !loot.destroy)
         {
             loot.gameObject.tag = "Untagged";
-            loot.transform.GetChild(0).gameObject.SetActive(false);
+            pickupPromptUI.SetActive(false);
         }
 
         lootController.lootPanel.SetActive(false);
@@ -120,15 +140,25 @@ public class InteractionController : MonoBehaviour
 
             playerInItemSphere = true;
             loot = currentInteraction.GetComponentInParent<Loot>();
-            currentInteraction.SetActive(true);
+            
+            PickupPrompt pickupPrompt = pickupPromptUI.GetComponent<PickupPrompt>();
+
+            pickupPrompt.targetWorld = currentInteraction.transform;
+            pickupPromptUI.SetActive(true);
         }
     }
-
+    /// <summary>
+    /// Je¿eli gracz jest za daleko wy³¹cza UI lootu
+    /// </summary>
+    /// <param name="other">Obecnie otwarty obiekt</param>
     private void OnTriggerExit(Collider other)
     {
         if (other.CompareTag("Interactive") && currentInteraction != null )
             DisableLootUI();
     }
+    /// <summary>
+    /// Wy³¹cza wszystkie elementy UI zwiazane z lootem
+    /// </summary>
     void DisableLootUI()
     {
         int childCount = lootController.contentParent.childCount;
@@ -136,13 +166,16 @@ public class InteractionController : MonoBehaviour
         for (int i = 0; i < childCount; i++)
             Destroy(lootController.contentParent.GetChild(0).gameObject);
 
-        loot = null;
         playerInItemSphere = false;
-        Cursor.lockState = CursorLockMode.Locked;
-        currentInteraction?.SetActive(false);
-        currentInteraction = null;
-        lootController.lootPanel.SetActive(false);
         lootIsOpen = false;
+
+        Cursor.lockState = CursorLockMode.Locked;
+
+        pickupPromptUI.SetActive(false);
+        lootController.lootPanel.SetActive(false);
+
+        loot = null;
+        currentInteraction = null;
 
     }
 }

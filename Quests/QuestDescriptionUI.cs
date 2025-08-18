@@ -30,7 +30,6 @@ namespace Quests
 
             DisplayQuestDescription.Instance.SetQuestData(quest.questName, quest.questDescriptions, questProgress);
 
-            if (quest.state == Quest.QuestState.Completed) return;
 
             // znajduje przycisk, œledz / przestañ œledziæ zadania 
             if (followQuestButton == null)
@@ -38,6 +37,8 @@ namespace Quests
 
             // usuwa wszystkie eventy z przycisku
             followQuestButton.onClick.RemoveAllListeners();
+
+            if (quest.state == Quest.QuestState.Completed) return;
 
             // œledzi w UI obecnie zaznaczone zadanie
             followQuestButton.onClick.AddListener(() =>

@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 using UnityEngine.Events;
 namespace Dialogues
 {
     public class Dialogue : MonoBehaviour
     {
-        [System.Serializable]
+        [Serializable]
         public class DialogueChoice
         {
             public string text;
@@ -14,12 +15,13 @@ namespace Dialogues
             public UnityEvent onChoiceSelected;
         }
 
-        [System.Serializable]
+        [Serializable]
         public class DialogueStage
         {
             public List<DialogueTextSO> texts;
             public UnityEvent onStageEnd;
         }
+
         [Tooltip("Etapy konwersacji NPC-a — ka¿dy to osobna faza.")]
         [SerializeField] public List<DialogueStage> dialogueStages = new();
 
@@ -51,12 +53,12 @@ namespace Dialogues
             }
             else notification.SetActive(false);
         }
-        public void IncreaseConversationStage()
-        {
-            conversationStage++;
-        }
+
+        public void IncreaseConversationStage() => conversationStage++;
 
         public void SetConversationStage(int value) => conversationStage = value;
+
+        public void EndConversation() => conversationStage = -1;
 
     }
 

@@ -21,6 +21,9 @@ public class UI : MonoBehaviour
     [SerializeField] GameObject saveNotification;
     [SerializeField] Inventory inventory;
     [SerializeField] PlayerHealth playerHealth;
+
+    [SerializeField] GameObject crosshair;
+
     AudioManager audioManager;
 
     private void Awake()
@@ -51,14 +54,36 @@ public class UI : MonoBehaviour
     }
     public void HighlightText(TextMeshProUGUI text) => text.color = highlightColor;
     public void DisableHighlightText(TextMeshProUGUI text) => text.color = nativColor;
+
+    private void OnEnable()
+    {
+        CrosshairController.CrosshairAction += SetCrosshairStatus;
+    }
     private void OnDisable()
     {
         foreach (var text in textsInMenu)
         {
             text.color = nativColor;
         }
+
+        CrosshairController.CrosshairAction -= SetCrosshairStatus;
     }
+    /// <summary>
+    /// ustawia widocznoœæ celownika: widoczny/niewidoczny
+    /// </summary>
+    /// <param name="status">widocznoœæ</param>
+    void SetCrosshairStatus(bool status)
+    {
+        crosshair?.SetActive(status);
+    }
+    /// <summary>
+    /// za³aduj menu g³ówne
+    /// </summary>
     public void LoadMenu() => SceneManager.LoadScene(0);
+
+    /// <summary>
+    /// wyjdŸ z gry
+    /// </summary>
     public void ExitGame() => Application.Quit();
 
     public void ShowNotification()

@@ -38,6 +38,10 @@ public class PlayerHealth : MonoBehaviour
             vest.SetActive(false);
         }
     }
+    /// <summary>
+    /// zmieñ poziom zycia gracza
+    /// </summary>
+    /// <param name="value"></param>
     public void ChangePlayerHealth(float value)
     {
         if (value < 0)
@@ -53,6 +57,11 @@ public class PlayerHealth : MonoBehaviour
         healthText.text = $"{currentHealth} / {maxHealth}";
     }
 
+    /// <summary>
+    /// zastosuj pancerz 
+    /// </summary>
+    /// <param name="damage">obra¿enia</param>
+    /// <returns></returns>
     float ApplyArmorProtection(float damage)
     {
         if (setArmorFromInventory == null || setArmorFromInventory.durability <= 1f)
@@ -84,6 +93,10 @@ public class PlayerHealth : MonoBehaviour
 
         return reducedDamage;
     }
+    /// <summary>
+    /// ustawia wartoœæ pancerza w UI
+    /// </summary>
+    /// <param name="value"></param>
     public void SetVestDurabilityTextInUI(float value)
     {
         durabilityText.text = $"Trwa³oœæ: {value}";

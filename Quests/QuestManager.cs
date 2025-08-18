@@ -26,6 +26,10 @@ namespace Quests
 
         QuestsSaveData saveData = new();
 
+        /// <summary>
+        /// dodaje zadanie do listy aktywnych zadañ oraz ustawia je jako obecnie aktywne
+        /// </summary>
+        /// <param name="quest">nowe zadanie</param>
         public void AddQuest(Quest quest)
         {
             if (!activeQuests.Contains(quest))
@@ -34,10 +38,18 @@ namespace Quests
             SetActiveQuest(quest);
             OnQuestActivated?.Invoke(quest);
         }
+        /// <summary>
+        /// Odœwie¿a UI zadania
+        /// </summary>
+        /// <param name="quest">zadanie, któremu ma zostaæ odœwie¿one UI</param>
         public void NotifyQuestUpdated(Quest quest)
         {
             OnQuestUpdated?.Invoke(quest);
         }
+        /// <summary>
+        /// Ustawia zadanie na obecnie aktywne
+        /// </summary>
+        /// <param name="quest">zadabue do aktywancji</param>
         public void SetActiveQuest(Quest quest)
         {
             if (lastActiveQuest == quest)
@@ -57,6 +69,10 @@ namespace Quests
             quest.isActive = true;
             OnQuestActivated?.Invoke(quest);
         }
+        /// <summary>
+        /// prze³¹cz aktywne zadanie
+        /// </summary>
+        /// <param name="quest">zadanie do prze³¹czenia</param>
         void ToggleQuestActivity(Quest quest)
         {
             quest.isActive = !quest.isActive;
@@ -65,12 +81,10 @@ namespace Quests
             else
                 OnQuestDeactivated?.Invoke(quest);
         }
-
-        public void UpdateQuestProgress(Quest quest, string newProgress)
-        {
-            quest.questPorgress = newProgress;
-            OnQuestUpdated?.Invoke(quest);
-        }
+        /// <summary>
+        /// Ukoñcz zadanie
+        /// </summary>
+        /// <param name="quest">zadanie, które ma zostaæ zakoñczone</param>
         public void QuestCompleted(Quest quest)
         {
             if (!activeQuests.Contains(quest))
@@ -83,10 +97,14 @@ namespace Quests
             OnQuestCompleted?.Invoke(quest);
 
         }
+        /// <summary>
+        /// zapisz dane zadañ
+        /// </summary>
+        /// <returns></returns>
         public QuestsSaveData SaveQuests()
         {
             saveData.questsData.Clear();
-            foreach (Quest quest in activeQuests)
+            foreach (Quest quest in allQuests)
             {
                 QuestData questData = new QuestData();
 
@@ -98,7 +116,10 @@ namespace Quests
             }
             return saveData;
         }
-
+        /// <summary>
+        /// wczytaj zadania
+        /// </summary>
+        /// <param name="data">wczytany plik</param>
         public void LoadQuests(GameData data)
         {
             QuestsSaveData questsData = data.questsData;
@@ -125,9 +146,9 @@ namespace Quests
                 {
                     if (!questsCompleted.Contains(loaded))
                         questsCompleted.Add(loaded);
+
                 }
 
-                Debug.Log(loaded.questStage);
                 // Ustaw etap questa
                 loaded.SetStage(Mathf.Max(1, questData.questStage), fromLoad: true);
 
@@ -138,6 +159,7 @@ namespace Quests
             // Jeœli mamy ustawiony currentQuest, odœwie¿ jego opis w UI
             if (currentQuest != null)
                 OnQuestUpdated?.Invoke(currentQuest);
+
         }
 
         Quest LoadedQuest(int id) => allQuests.FirstOrDefault(q => q.questID == id);
