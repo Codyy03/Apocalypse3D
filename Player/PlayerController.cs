@@ -6,6 +6,8 @@ using UnityEngine.EventSystems;
 
 public class PlayerController : MonoBehaviour
 {
+    public static PlayerController Instance { get; private set; }
+
     [Tooltip("Wszystkie bronie gracza")]
     public List<UsedWeapon> usedWeapons;
     public UsedWeapon lastSelectedWeapon;
@@ -32,9 +34,12 @@ public class PlayerController : MonoBehaviour
 
     void Awake()
     {
+        Instance = this;
+
         fpsController = GetComponent<FpsControllerLPFP>();
         usedWeapons[0].currentWeapon = weapons[0];
         lastSelectedWeapon = usedWeapons[0];
+
     }
     void Update()
     {

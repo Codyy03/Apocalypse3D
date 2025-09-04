@@ -8,6 +8,8 @@ using System.Linq;
 
 public class Inventory : MonoBehaviour
 {
+    public static Inventory Instance;
+
     [Serializable]
     // klasa reprezentuj¹ca slot
     public class Slot
@@ -53,9 +55,9 @@ public class Inventory : MonoBehaviour
     List<ShowItemDescription> itemsDescription = new List<ShowItemDescription>();
     bool itemAddToSlot;
 
-    public List<Slot> slotsToSort = new List<Slot>();
-    public List<Slot> othersItems = new List<Slot>();
-    public List<Slot> allItems = new List<Slot>();
+    List<Slot> slotsToSort = new List<Slot>();
+    List<Slot> othersItems = new List<Slot>();
+    List<Slot> allItems = new List<Slot>();
 
     public GameManager gameManager;
 
@@ -64,29 +66,23 @@ public class Inventory : MonoBehaviour
     [SerializeField] SetWeaponFromInventory secondWeapon;
     [SerializeField] SetMedicineFromInventory medicine;
     [SerializeField] SetArmorFromInventory armor;
-    PlayerController playerController;
-    PlayerHealth playerHealth;
+    [SerializeField] PlayerController playerController;
+    [SerializeField] PlayerHealth playerHealth;
     // inicjalizacja zmiennych
+
     private void Awake()
     {
+        Instance = this;
+        
         for (int i = 0; i < slots.Length; i++)
         {
             itemsDescription.Add(slots[i].inventorySlot.transform.GetChild(1).GetComponent<ShowItemDescription>());
             itemsDescription[i].slotNumber = i;
             slots[i].DisplaySlotAmount();
         }
-        gameManager = FindFirstObjectByType<GameManager>();
-        playerController = FindFirstObjectByType<PlayerController>();
-        playerHealth = FindFirstObjectByType<PlayerHealth>();
     }
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
-            SaveInventory();
-
-        if (Input.GetKeyDown(KeyCode.Z))
-            LoadInventory();
-
         if (Input.GetKeyDown(KeyCode.Alpha0))
             foreach (Item item in items)
                 CreateItem(item.ID);
@@ -98,10 +94,11 @@ public class Inventory : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.S))
             SortSlots();
 
-
-        
     }
-    // sprawdza czy przedmiot istnieje, jezeli tak dodaje do slotu
+    /// <summary>
+    /// sprawdza czy przedmiot istnieje, je¿eli tak dodaje do slotu
+    /// </summary>
+    /// <param name="id">identyfikator przedmiotu</param>
     void CreateShortcut(int id)
     {
         for (int i = 0; i < slots.Length; i++)
@@ -117,6 +114,13 @@ public class Inventory : MonoBehaviour
 
         itemAddToSlot = false;
     }
+    /// <summary>
+    /// Próbuje stworzyæ nowy przedmiot w pustym slocie
+    /// </summary>
+    /// <param name="item">przedmiot do stworzenia</param>
+    /// <param name="amount">iloœæ przedmiotów</param>
+    /// <param name="durability">wytrzyma³oœæ, opcjonalna tylko do pancerza</param>
+    /// <returns></returns>
     bool TryCreateNewSlot(Item item, int amount, float durability = 0)
     {
         for (int i = 0; i < slots.Length; i++)
@@ -140,7 +144,11 @@ public class Inventory : MonoBehaviour
         }
         return false;
     }
-    // tworzy przedmiot
+    /// <summary>
+    /// tworzy jeden przedmiot na podstawie identyfikatora
+    /// </summary>
+    /// <param name="id">identyfikator</param>
+    /// <param name="durability">wytrzyma³oœæ, opcjonalna tylko do pancerza</param>
     public void CreateItem(int id, float durability = 0)
     {
         Item item = Array.Find(items, i => i.ID == id);
@@ -167,11 +175,20 @@ public class Inventory : MonoBehaviour
     }
 
     // tworzy wiele przedmiotów za pomoc¹ parametru 'id'
-    public void CreateManyItems(Item item, int howManyItem, float durability = 0)
+    public void CreateManyItems(Item item, int howManyItems, float durability = 0)
     {
-        if (howManyItem <= 0) return;
+        if (howManyItems <= 0) return;
 
-        int remaining = howManyItem;
+        if (item.tag == Item.ItemTag.Ammunition)
+        {
+            switch (item.ID)
+            {
+                case 150: AmmunitionStorage.ChangeHandgunAmmo(howManyItems); return; // handgun ammo
+                case 151: AmmunitionStorage.ChangeRifleAmmo(howManyItems); return; // rifle ammo
+            }
+        }
+
+        int remaining = howManyItems;
 
         // Dodawanie do istniej¹cych slotów
         while (remaining > 0)
@@ -283,7 +300,7 @@ public class Inventory : MonoBehaviour
         return false;
     }
     // zwraca ca³y przedmiot o ponadnym 'id'
-    public Item ReturnItem(int id)
+    public Item GetItem(int id)
     {
         Item itemToReturn = null;
         for (int i = 0; i < items.Length; i++)
@@ -361,7 +378,6 @@ public class Inventory : MonoBehaviour
             }
         }
     }
-
     public void SaveInventory()
     {
         InventoryData data = new InventoryData();
@@ -399,7 +415,7 @@ public class Inventory : MonoBehaviour
         for (int i = 0; i < slots.Length; i++)
         {
             if (data.slots[i].slotID != 0)
-                CreateManyItems(ReturnItem(data.slots[i].slotID), data.slots[i].slotAmount, data.slots[i].slotDurability);
+                CreateManyItems(GetItem(data.slots[i].slotID), data.slots[i].slotAmount, data.slots[i].slotDurability);
         }
         playerGold = data.playerGold;
 
@@ -411,19 +427,18 @@ public class Inventory : MonoBehaviour
 
         playerHealth.SetVestDurabilityTextInUI(armor.durability);
 
-        playerController.ChangeWeapon(1, ReturnItem(data.mainWeaponFastAcessID));
-        playerController.ChangeWeapon(0, ReturnItem(data.secondeaponFastAcessID));
+        playerController.ChangeWeapon(1, GetItem(data.mainWeaponFastAcessID));
+        playerController.ChangeWeapon(0, GetItem(data.secondeaponFastAcessID));
 
         medicine.GetItemDescription();
         medicine.SetValues();
-
     }
     void SetFastAccess(DropItemToFastAccess slot, int itemId)
     {
         slot.actualUseID = itemId;
 
         var description = slot.GetComponent<ShowItemDescription>();
-        var item = ReturnItem(itemId);
+        var item = GetItem(itemId);
 
         description.itemIdInSlot = itemId;
         description.itemInSlot = item;
@@ -431,7 +446,6 @@ public class Inventory : MonoBehaviour
         if (item != null)
         slot.GetComponent<Image>().sprite = item.image;
     }
-
     public void SortSlots()
     {
         foreach (Slot slot in slots)
@@ -459,7 +473,6 @@ public class Inventory : MonoBehaviour
         }
         slotsToSort.Clear();
     }
-
     public void SortSlotsByTag(Item.ItemTag itemTag)
     {
         RollbackInventory();
@@ -494,7 +507,6 @@ public class Inventory : MonoBehaviour
         slotsToSort.Clear();
         othersItems.Clear();
     }
-
     public void RollbackInventory()
     {
         if (allItems.Count == 0) return;
@@ -547,10 +559,6 @@ public class Inventory : MonoBehaviour
         slotsToSort[one] = slotsToSort[two];
         slotsToSort[two] = temp;
     }
-
-
-
-
 }
 
 

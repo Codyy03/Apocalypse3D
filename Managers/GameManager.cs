@@ -1,6 +1,7 @@
 using Quests;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static LootController;
@@ -17,18 +18,21 @@ public class GameManager : MonoBehaviour
     }
 
     [SerializeField] List<UIElementsToOpen> playerUIToOpen;
+    [SerializeField] GameObject settings;
+    [SerializeField] GameObject panel;
     GameObject currentActiveElement;
 
     public GameData gameData = new GameData();
 
     Transform player;
-    PlayerHealth playerHealth;
+    [SerializeField] PlayerHealth playerHealth;
 
-    Inventory inventory;
+    [SerializeField] Inventory inventory;
 
     [Header("Bronie do zapisu")]
     [SerializeField] HandgunScriptLPFP handgun;
     [SerializeField] AutomaticGunScriptLPFP assaultRifle;
+    [SerializeField] SniperScriptLPFP sniper;
     SaveSystem saveSystem = new SaveSystem();
 
     [Header("Mapa")]
@@ -37,15 +41,15 @@ public class GameManager : MonoBehaviour
 
     bool mapWasOpen;
 
-    QuestManager questManager;
-    PlayerController playerController;
+    [SerializeField] QuestManager questManager;
+    [SerializeField] PlayerController playerController;
+
+    [SerializeField] GameObject playerLoaded;
+    [SerializeField] GameObject UILoaded;
+    [SerializeField] GameObject mapLoaded;
     private void Awake()
     {
-        playerController = FindFirstObjectByType<PlayerController>();
         player = playerController.transform;
-        playerHealth = FindFirstObjectByType<PlayerHealth>();
-        inventory = FindFirstObjectByType<Inventory>();
-        questManager = FindFirstObjectByType<QuestManager>();
     }
     void Update()
     {
@@ -147,10 +151,12 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void DisableUIElement()
     {
-        currentActiveElement.SetActive(false);
+        currentActiveElement?.SetActive(false);
         currentActiveElement = null;
         UIElementIsOpen = false;
         HandleCursorAndTime(CursorLockMode.Locked, 1f);
+        settings.SetActive(false);
+        panel.SetActive(true);
     }
     /// <summary>
     /// zapisz dane gracza
@@ -160,6 +166,7 @@ public class GameManager : MonoBehaviour
         PlayerData playerData = new PlayerData();
         AmmunitionData handgunData = new AmmunitionData();
         AmmunitionData assaultRifleData = new AmmunitionData();
+        AmmunitionData sniperData = new AmmunitionData();
 
         playerData.position = player.position;
 
@@ -173,11 +180,15 @@ public class GameManager : MonoBehaviour
         assaultRifleData.currentAmmunition = assaultRifle.GetCurrentAmmo();
         assaultRifleData.totalAmmunition = AmmunitionStorage.rifleAmmo;
 
+        sniperData.currentAmmunition = sniper.GetCurrentAmmo();
+        sniperData.totalAmmunition = AmmunitionStorage.sniperAmmo;
+
         WeaponData weaponData = new WeaponData();
 
         weaponData.ammunitionDatas.Add(handgunData);
         weaponData.ammunitionDatas.Add(assaultRifleData);
-
+        weaponData.ammunitionDatas.Add(sniperData)
+            ;
         gameData.weaponData = weaponData;
     }
     /// <summary>
@@ -187,11 +198,13 @@ public class GameManager : MonoBehaviour
     {
         // Utwórz now¹ listê lootów
         gameData.lootSaveData = new List<LootSaveData>();
-
+        string currentScene = SceneManager.GetActiveScene().name;
+      
         foreach (Loot loot in FindObjectsByType<Loot>(FindObjectsSortMode.None))
         {
             LootSaveData data = new LootSaveData
             {
+                sceneName = currentScene,
                 lootID = loot.lootID,
                 items = new List<ItemInLootData>()
             };
@@ -208,15 +221,45 @@ public class GameManager : MonoBehaviour
             gameData.lootSaveData.Add(data); // dodajemy ka¿dy loot do listy
         }
     }
-    void OnLevelWasLoaded(int level)
+    private void OnEnable()
     {
-        // Tutaj wklejasz logikê z OnLevelWasLoaded
-        Cursor.lockState = CursorLockMode.Locked;
-        Time.timeScale = 1;
-        UIElementIsOpen = false;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
 
-        if (Menu.loadGame)
-            LoadGame();
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // Dostosuj tylko do scen gry, nie do menu
+        if (scene.name == "Beginning" || scene.name == "CityRoad")
+        {
+            if (scene.name == "Beginning")
+                player.position = new Vector3(-33.2999992f, 6.16099977f, 87.6100006f);
+
+           if (scene.name == "CityRoad")
+                player.position = new Vector3(180.809998f, 1.60000002f, 28.7999992f);
+
+            Cursor.lockState = CursorLockMode.Locked;
+            Time.timeScale = 1;
+            UIElementIsOpen = false;
+            SetLoadedObjectsActivity(true);
+            if (Menu.loadGame)
+            {
+                LoadGame();
+                Menu.loadGame = false; // ¿eby nie wczytywa³o w kó³ko
+            }
+        }
+    }
+    public void SetLoadedObjectsActivity(bool activity)
+    {
+        playerLoaded.SetActive(activity);
+        UILoaded.SetActive(activity);
+        mapLoaded.SetActive(activity);
+
+        DisableUIElement();
     }
     /// <summary>
     /// zapisz gre
@@ -249,39 +292,50 @@ public class GameManager : MonoBehaviour
 
         assaultRifle.LoadAmmo(gameData.weaponData.ammunitionDatas[1].currentAmmunition, gameData.weaponData.ammunitionDatas[1].totalAmmunition);
 
+        sniper.LoadAmmo(gameData.weaponData.ammunitionDatas[2].currentAmmunition, gameData.weaponData.ammunitionDatas[2].totalAmmunition);
+
         if (playerController.noWeapons)
             playerController.GetComponentInChildren<Gun>().HideWeapon();
 
         LoadLoot();
 
-        questManager.LoadQuests(gameData);
+        questManager.LoadQuests(gameData.questsData);
     }
     /// <summary>
     /// wczytaj stan loot'u
     /// </summary>
     public void LoadLoot()
     {
+        string currentActiveName = SceneManager.GetActiveScene().name;
+
+        var lootMap = gameData.lootSaveData
+        .Where(l => l.sceneName == currentActiveName)
+        .ToDictionary(l => l.lootID, l => l);
+
         foreach (Loot loot in FindObjectsByType<Loot>(FindObjectsSortMode.None))
         {
-            LootSaveData saved = gameData.lootSaveData.Find(l => l.lootID == loot.lootID);
-            if (saved == null) continue;
-
-            loot.items.Clear();
-
-            foreach (ItemInLootData slot in saved.items)
+            if (lootMap.TryGetValue(loot.lootID, out var saved))
             {
-                Item baseItem = inventory.ReturnItem(slot.itemID);
-                loot.items.Add(new ItemInLoot
-                {
-                    item = baseItem,
-                    quantity = slot.quantity
-                });
-            }
+                if (saved == null) continue;
 
-            if (loot.items.Count == 0 && loot.destroy)
-                Destroy(loot.gameObject);
-            else if(loot.items.Count == 0)
-                loot.gameObject.tag = "Untagged";
+                loot.items.Clear();
+
+                foreach (ItemInLootData slot in saved.items)
+                {
+                    Item baseItem = inventory.GetItem(slot.itemID);
+                    if (baseItem == null) continue;
+                    loot.items.Add(new ItemInLoot
+                    {
+                        item = baseItem,
+                        quantity = slot.quantity
+                    });
+                }
+
+                if (loot.items.Count == 0 && loot.destroy)
+                    Destroy(loot.gameObject);
+                else if (loot.items.Count == 0)
+                    loot.gameObject.tag = "Untagged";
+            }
         }
     }
 }

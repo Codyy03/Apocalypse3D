@@ -25,6 +25,7 @@ public class SetWeaponFromInventory : DropItemToFastAccess
             }
         }
 
+        // zmienia broñ
         controller.ChangeWeapon(weaponType, showItemDescription.itemInSlot);
     }
 }

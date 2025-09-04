@@ -1,31 +1,40 @@
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using TMPro;
-using System.Collections.Generic;
-using System.Collections;
 public class UI : MonoBehaviour
 {
     public static UI Instance;
-    [Header("Napisy")]
-    [SerializeField] List<TextMeshProUGUI> textsInMenu;
 
     readonly Color nativColor = new Color(1f, 0.984f, 0.902f, 1f); // #FFFBE6 
     readonly Color highlightColor = new Color(1f, 0.866f, 0.157f, 1f); // #FFDD28
 
-    public ShowItemDescription itemDescription;
+    [Header("Napisy")]
+    [SerializeField] List<TextMeshProUGUI> textsInMenu;
 
+    [Header("Ekwipunek UI")]
+    public ShowItemDescription itemDescription;
+    [SerializeField] Inventory inventory;
+
+    [Header("Szybki dostÍp UI")]
     [SerializeField] SetMedicineFromInventory fastAccessMedicine;
     [SerializeField] FastAccessUi accessUi;
+
+    [Header("DüwiÍki")]
     [SerializeField] AudioClip useMedicineSound;
 
+    [Header("Powiadomienie")]
     [SerializeField] GameObject saveNotification;
-    [SerializeField] Inventory inventory;
-    [SerializeField] PlayerHealth playerHealth;
 
+    [Header("Celownik")]
     [SerializeField] GameObject crosshair;
 
-    AudioManager audioManager;
+    [Header("NiezbÍdne klasy")]
+    [SerializeField] GameManager gameManager;
+    [SerializeField] PlayerHealth playerHealth;
 
+    AudioManager audioManager;
     private void Awake()
     {
         Instance = this;
@@ -33,23 +42,31 @@ public class UI : MonoBehaviour
     }
     private void Update()
     {
-        if (itemDescription.itemInSlot == null) return;
+        if (itemDescription == null) return;
 
+        HandleFastAccessMedicine();
+    }
+
+    void HandleFastAccessMedicine()
+    {
         int itemId = itemDescription.itemIdInSlot;
-
         if (Input.GetKeyDown(KeyCode.T) && inventory.HowManyItems(itemId) > 0)
         {
+            float currentMedicine = itemDescription.itemInSlot.health;
             inventory.ReduceItem(itemId, 1);
+
+            playerHealth.ChangePlayerHealth(currentMedicine);
 
             accessUi.UpdateFastAccess(inventory.HowManyItems(itemId).ToString());
 
-            playerHealth.ChangePlayerHealth(itemDescription.itemInSlot.health);
             audioManager.PlayClip(useMedicineSound);
-        }
-        else if (inventory.HowManyItemsInSlot(itemId) == 0)
-        {
-            fastAccessMedicine.UpdateFastAccess();
-            accessUi.ResetValues();
+
+            if (inventory.HowManyItemsInSlot(itemId) == 0)
+            {
+                fastAccessMedicine.UpdateFastAccess();
+                accessUi.ResetValues();
+                itemDescription = null;
+            }
         }
     }
     public void HighlightText(TextMeshProUGUI text) => text.color = highlightColor;
@@ -79,7 +96,12 @@ public class UI : MonoBehaviour
     /// <summary>
     /// za≥aduj menu g≥Ûwne
     /// </summary>
-    public void LoadMenu() => SceneManager.LoadScene(0);
+    public void LoadMenu()
+    {
+        gameManager.DisableUIElement();
+        gameManager.SetLoadedObjectsActivity(false);
+        SceneManager.LoadScene(1);
+    }
 
     /// <summary>
     /// wyjdü z gry
@@ -91,7 +113,6 @@ public class UI : MonoBehaviour
         saveNotification.SetActive(true);
         StartCoroutine(DisableNotification());
     }
-
     IEnumerator DisableNotification()
     {
         yield return new WaitForSeconds(1f);

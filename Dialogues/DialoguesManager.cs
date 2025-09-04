@@ -11,6 +11,7 @@ namespace Dialogues
 {
     public class DialoguesManager : MonoBehaviour
     {
+        public static DialoguesManager Instance;
         public static bool dialogueIsActive;
         public string currentText;
 
@@ -23,17 +24,23 @@ namespace Dialogues
         public List<DialogueTextSO> currentDialogue = new();
         int currentTextIndex;
 
-        PlayerController playerController;
+        [SerializeField] PlayerController playerController;
+        Transform currentUsedWeapon;
+
+        [SerializeField] GameObject ui;
+
         GameObject firstButton = null;
 
         UnityEvent onStageEnd;
+
         private void Awake()
         {
-            playerController = FindFirstObjectByType<PlayerController>();
+            Instance = this;
         }
         void Update()
         {
             if (!dialogueIsActive) return;
+            if (BlackScreenController.instance.blackScreenIsActive) return;
 
             Cursor.lockState = CursorLockMode.None;
 
@@ -66,6 +73,18 @@ namespace Dialogues
         {
             if (dialogueIsActive) return;
 
+            ui.SetActive(false);
+
+            for (int i = 0; i < playerController.transform.childCount; i++)
+            {
+                Transform currentChild = playerController.transform.GetChild(i);
+                if (currentChild.gameObject.activeSelf)
+                {
+                    currentUsedWeapon = currentChild;
+                    break;
+                }
+            }
+            currentUsedWeapon.rotation = new Quaternion(0, 0, 0, 0);
             currentDialogue = new List<DialogueTextSO>();
 
             foreach (DialogueTextSO original in texts)
@@ -226,9 +245,10 @@ namespace Dialogues
         }
         IEnumerator WaitToDisableDialog()
         {
-            yield return new WaitForSeconds(0.3f);
+            yield return new WaitForEndOfFrame();
             dialogueIsActive = false;
             Cursor.lockState = CursorLockMode.Locked;
+            ui.SetActive(true);
         }
         IEnumerator SetFocusNextFrame(GameObject button)
         {

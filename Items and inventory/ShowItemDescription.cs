@@ -33,16 +33,21 @@ public class ShowItemDescription : MonoBehaviour, IPointerEnterHandler, IPointer
     public Item itemInSlot;
     public float distanceToSlot = 0;
 
-    private GameObject parentGameObject;
+    GameObject parentGameObject;
 
-    private TextMeshProUGUI itemName, description, value, other, priceForFull, quality;
+    TextMeshProUGUI itemName, description, value, other, priceForFull, quality;
 
     Inventory inventorySystem;
 
-    private Image qualityTextBackground;
+    Image qualityTextBackground;
+    
     ItemsQualitySpritesList qualitySpritesList;
+
     List<string> details = new List<string>();
+    
     SetArmorFromInventory setArmorFromInventory;
+
+    Canvas canvas;
 
     private void Awake()
     {
@@ -59,6 +64,8 @@ public class ShowItemDescription : MonoBehaviour, IPointerEnterHandler, IPointer
         other = root.GetChild(3).GetComponent<TextMeshProUGUI>();
         quality = root.GetChild(4).GetChild(0).GetComponent<TextMeshProUGUI>();
         qualityTextBackground = root.GetChild(4).GetComponent<Image>();
+
+        canvas = GetComponentInParent<Canvas>();
     }
 
     public void OnPointerEnter(PointerEventData eventData)
@@ -117,13 +124,32 @@ public class ShowItemDescription : MonoBehaviour, IPointerEnterHandler, IPointer
 
     void SetPosition()
     {
-        Vector3 basePos = transform.position;
-        Vector3 offset = new(Screen.width * ScreenX + distanceToSlot, 0, 0);
+        RectTransform descRect = descriptionImage.GetComponent<RectTransform>();
+        RectTransform slotRect = GetComponent<RectTransform>();
 
-        if (whereIsSlot == WhereIsSlot.inventory && new[] { 3, 4, 8, 9, 13, 14 }.Contains(slotNumber))
-            offset = new Vector3(-Screen.width * ScreenX + distanceToSlot, 0, 0);
+        // œwiatowa pozycja slotu -> lokalna wzglêdem Canvas
+        Vector2 slotPosInCanvas;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            descRect.parent as RectTransform,
+            RectTransformUtility.WorldToScreenPoint(null, slotRect.position),
+            null,
+            out slotPosInCanvas
+        );
 
-        descriptionImage.transform.position = basePos + offset;
+        // ustaw bazow¹ pozycjê
+        Vector2 anchoredPos = slotPosInCanvas;
+
+        // oblicz przesuniêcie w jednostkach Canvas
+        float offsetX = (descRect.parent as RectTransform).rect.width * ScreenX;
+
+        // automatyczne wykrycie strony — jeœli slot po prawej, przesuñ tooltip w lewo
+        bool isRightSide = slotPosInCanvas.x > 0;
+        if (isRightSide)
+            offsetX = -offsetX;
+
+        anchoredPos.x += offsetX;
+
+        descRect.anchoredPosition = anchoredPos;
     }
 
     void DisplayQuality()

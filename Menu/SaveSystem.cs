@@ -42,7 +42,8 @@ public class WeaponData
 [Serializable]
 public class LootSaveData
 {
-    public string lootID;            // unikalny identyfikator obiektu lootu
+    public string sceneName;
+    public string lootID;  // unikalny identyfikator obiektu lootu
     public List<ItemInLootData> items;
 }
 
@@ -57,9 +58,8 @@ public class QuestData
 {
     public int questID;
     public int questStage;
+    public bool isActive;
     public QuestState questState;
-
-    public Dictionary<string, int> ints = new();
 }
 
 [Serializable]

@@ -14,7 +14,7 @@ public class LootController : MonoBehaviour
     {
         public Item item;
         public int quantity;
-        public UnityEvent onLootTaken;
+        public UnityEvent onLootTaken = new();
     }
 
     private void Update()

@@ -35,6 +35,12 @@ namespace Dialogues
 
         [SerializeField] GameObject notification;
 
+        private void Start()
+        {
+            player = FindFirstObjectByType<PlayerController>().transform;
+            manager = FindFirstObjectByType<DialoguesManager>();
+        }
+
         private void Update()
         {
             if (Vector3.Distance(player.position, transform.position) <= distanceToTalk)
@@ -54,6 +60,7 @@ namespace Dialogues
             else notification.SetActive(false);
         }
 
+        public void StartCurrentStageDialgue() => manager.StartDialogue(dialogueStages[conversationStage].texts);
         public void IncreaseConversationStage() => conversationStage++;
 
         public void SetConversationStage(int value) => conversationStage = value;

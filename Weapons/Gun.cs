@@ -104,8 +104,6 @@ public abstract class Gun : MonoBehaviour
 
         anim.SetBool("Holster", false);
         hasBeenHolstered = false;
-
-
     }
 
     public void EnbleAttackPoint() => attackPoint.SetActive(true);

@@ -29,7 +29,7 @@ public class LootManager : MonoBehaviour, IPointerClickHandler,IPointerEnterHand
         if (eventData.pointerEnter != null)
         {
             itemImage.color = Color.yellow;
-            itemName.text = inventory.ReturnItem(itemId).objectName;          
+            itemName.text = inventory.GetItem(itemId).objectName;          
         }
     }
 
@@ -51,7 +51,7 @@ public class LootManager : MonoBehaviour, IPointerClickHandler,IPointerEnterHand
   
     public void TakeItem()
     {
-        if (inventory.HowManyItemsInSlot(itemId) < inventory.ReturnItem(itemId).maxItemsInSlot || inventory.FreeSlotsAmount() > 1)
+        if (inventory.HowManyItemsInSlot(itemId) < inventory.GetItem(itemId).maxItemsInSlot || inventory.FreeSlotsAmount() > 1)
         {
             inventory.CreateItem(itemId);
 

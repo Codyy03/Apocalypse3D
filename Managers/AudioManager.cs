@@ -4,25 +4,16 @@ using UnityEngine;
 
 public class AudioManager : MonoBehaviour
 {
+    public static AudioManager Instance;
     [SerializeField] AudioClip clickSound;
     AudioSource audioSource;
-    void Start()
+
+    private void Awake()
     {
+        Instance = this;
         audioSource = GetComponent<AudioSource>();
     }
-
-    // Update is called once per frame
-    void Update()
-    {
         
-    }
-
-    public void PlayClip(AudioClip clip)
-    {
-        audioSource.PlayOneShot(clip);
-    }
-    public void PlayClickSound()
-    {
-        PlayClip(clickSound);
-    }
+    public void PlayClip(AudioClip clip) => audioSource.PlayOneShot(clip);
+    public void PlayClickSound() => PlayClip(clickSound);
 }

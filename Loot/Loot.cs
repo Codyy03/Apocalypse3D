@@ -13,4 +13,19 @@ public class Loot : MonoBehaviour
     [Tooltip("Je¿eli zaznaczone to zniszcz obiekt po zebraniu z niego przedmiotów")]
     public bool destroy;
 
+    private void OnValidate()
+    {
+        if (items == null) return;
+
+        foreach (ItemInLoot item in items)
+        {
+            if (item != null && item.quantity <= 0) 
+                Debug.LogError(
+                    $"B³¹d w {gameObject.name}" +
+                    $"Przemiot '{item.item.objectName}'"+
+                    $"ma quantity = {item.quantity} (musi byæ > 0)",
+                    this
+                    );
+        }
+    }
 }

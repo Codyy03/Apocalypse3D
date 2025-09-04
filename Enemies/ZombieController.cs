@@ -5,8 +5,20 @@ using UnityEngine.AI;
 
 public class ZombieController : MonoBehaviour
 {
+    enum ZombieStartState
+    {
+        Idle,
+        Walk
+    }
+    enum ZombieGoToPlayer
+    {
+        Walk,
+        Run
+    }
+
     [Tooltip("Jak daleko ma sie znajdowaæ od gracza aby szed³ w jego strone")]
     [SerializeField] float distanceToWalk;
+    [SerializeField] float distanceToWalkAfterZombieSawPlayer = 20f;
     float defaultDistanceToWalk;
 
     [Tooltip("Jak daleko ma sie znajdowaæ od gracza aby atakowa³")]
@@ -15,25 +27,14 @@ public class ZombieController : MonoBehaviour
     [SerializeField] float patrolRadius = 5f;
     [SerializeField] float patrolDelay = 6f;
 
-    private float patrolTimer = 0f;
-    private Vector3 patrolOrigin;
+    float patrolTimer = 0f;
+    Vector3 patrolOrigin;
 
-    public float distance;
-    public float maxChaseDistance = 10f;
+    float distance;
 
     public GameObject mapMark;
-    enum ZombieStartState
-    { 
-        Idle,
-        Walk
-    }
-    [SerializeField] ZombieStartState startState;
 
-    enum ZombieGoToPlayer
-    {
-        Walk,
-        Run
-    }
+    [SerializeField] ZombieStartState startState;
 
     [Tooltip("Aktywnoœæ zobmie podczas zbil¿ania siê do gracza")]
     [SerializeField] ZombieGoToPlayer zombieGoToPlayerState;
@@ -47,7 +48,9 @@ public class ZombieController : MonoBehaviour
     float hitDuration = 0f;
     float hitTimer = 0f;
 
-    [SerializeField] Transform player;
+    bool zombieFolowPlayer;
+
+    Transform player;
     NavMeshAgent agent;
 
     ZombieAnimationsController animationsController;
@@ -56,12 +59,14 @@ public class ZombieController : MonoBehaviour
     [SerializeField] float fadeDuration = 0.5f;
 
     [Header("DŸwiêki")]
-    [SerializeField] AudioClip walkSound, walkingTowardsPlayerSound,runingSound, idleSound;
+    [SerializeField] AudioClip walkSound, walkingTowardsPlayerSound, runingSound, idleSound;
     [SerializeField] AudioClip hitSound;
     [SerializeField] AudioClip attackSound;
 
     AudioSource walkAudioSource; // do loopów: chodzenie, idle
     AudioSource fxAudioSource;   // do efektów: uderzenie, atak
+
+    AudioClip randomWalkingSound;
 
     void Awake()
     {
@@ -85,6 +90,20 @@ public class ZombieController : MonoBehaviour
         agent.updateRotation = false;
 
         defaultDistanceToWalk = distanceToWalk;
+
+        randomWalkingSound = Random.Range(0, 2) == 0 ? walkSound : walkingTowardsPlayerSound;
+    }
+    private void Start()
+    {
+        player = FindFirstObjectByType<PlayerController>().transform;
+    }
+    private void OnEnable()
+    {
+        NoiseSystem.OnNoise += ReactToNoise;
+    }
+    private void OnDisable()
+    {
+        NoiseSystem.OnNoise -= ReactToNoise;
     }
     void Update()
     {
@@ -99,6 +118,26 @@ public class ZombieController : MonoBehaviour
             return;
         }
 
+        HandleRotation();
+
+        // dystans do gracza
+        distance = Vector3.Distance(transform.position, player.position);
+
+        if (distance > distanceToWalk)
+        {
+            HandlePlayerTooFar();
+        }
+        else if (distance > distanceToAttack)
+        {
+            HandleZombieMoveTorwardsPlayer();
+        }
+        else
+        {
+            HandleAttack();
+        }
+    }
+    void HandleRotation()
+    {
         // rotacja zombie
         if (agent.velocity.sqrMagnitude > 0.1f)
         {
@@ -106,85 +145,89 @@ public class ZombieController : MonoBehaviour
             Quaternion lookRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
             transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 5f);
         }
-
-        // dystans do gracza
-        distance = Vector3.Distance(transform.position, player.position);
-
-        if (distance > distanceToWalk)
+    }
+    void HandlePlayerTooFar()
+    {
+        if (ZombieStartState.Idle == startState)
         {
-            if(ZombieStartState.Idle == startState)
+            // Gracz za daleko. 
+            if (zombieFolowPlayer)
             {
-                // Gracz za daleko. 
+                animationsController.ChangeAnimation(animationsController.lookAround);
+            }
+            else
                 animationsController.ChangeAnimation(animationsController.idle);
-                agent.ResetPath();
-                PlayWalkSound(idleSound);
-
-                if (walkAudioSource.isPlaying && walkAudioSource.clip != idleSound)
-                {
-                    StartCoroutine(FadeOutAudio(walkAudioSource, fadeDuration));
-                }
-            }
-            else
-            {
-                // Zombie nie widzi gracza, patroluje
-                animationsController.ChangeAnimation(animationsController.walk);
-                agent.speed = walkSpeed;
-                patrolTimer -= Time.deltaTime;
-                if (patrolTimer <= 0f || agent.remainingDistance <= 0.5f)
-                {
-                    Vector3 newPatrolPoint = GetRandomPointInPatrolRadius();
-                    agent.SetDestination(newPatrolPoint);
-                    patrolTimer = patrolDelay + Random.Range(-2f, 2f);
-                }
-
-                PlayWalkSound(walkSound);
-            }
-        }
-        else if (distance > distanceToAttack)
-        {
-            agent.SetDestination(player.position);
-         
-            if(zombieGoToPlayerState == ZombieGoToPlayer.Walk)
-            {
-                animationsController.ChangeAnimation(animationsController.walk);
-                PlayWalkSound(Random.Range(0, 2) == 0 ? walkSound : walkingTowardsPlayerSound);
-
-                agent.speed = walkSpeed;
-            }
-            else
-            {
-                animationsController.ChangeAnimation(animationsController.run);
-                PlayWalkSound(runingSound);
-
-                if(agent.speed == walkSpeed)
-                {
-                    agent.speed = runningSpeed;
-                }
-            }
-        }
-        else
-        {
-            // Atak
-            animationsController.ChangeAnimation(animationsController.attack);
+            
             agent.ResetPath();
+            PlayWalkSound(idleSound);
 
-            if (walkAudioSource.isPlaying)
+            if (walkAudioSource.isPlaying && walkAudioSource.clip != idleSound)
             {
                 StartCoroutine(FadeOutAudio(walkAudioSource, fadeDuration));
             }
         }
+        else
+        {
+            // Zombie nie widzi gracza, patroluje
+            animationsController.ChangeAnimation(animationsController.walk);
+            agent.speed = walkSpeed;
+            patrolTimer -= Time.deltaTime;
+            if (patrolTimer <= 0f || agent.remainingDistance <= 0.5f)
+            {
+                Vector3 newPatrolPoint = GetRandomPointInPatrolRadius();
+                agent.SetDestination(newPatrolPoint);
+                patrolTimer = patrolDelay + Random.Range(-2f, 2f);
+            }
+
+            PlayWalkSound(walkSound);
+        }
     }
-    private void OnEnable()
+    void HandleZombieMoveTorwardsPlayer()
     {
-        NoiseSystem.OnNoise += ReactToNoise;
+        agent.SetDestination(player.position);
+
+        zombieFolowPlayer = true;
+
+        if (distanceToWalk != distanceToWalkAfterZombieSawPlayer)
+        {
+            distanceToWalk = distanceToWalkAfterZombieSawPlayer;
+            defaultDistanceToWalk = distanceToWalkAfterZombieSawPlayer;
+        }
+
+        if (zombieGoToPlayerState == ZombieGoToPlayer.Walk)
+        {
+            animationsController.ChangeAnimation(animationsController.walk);
+
+            PlayWalkSound(randomWalkingSound);
+
+            agent.speed = walkSpeed;
+        }
+        else
+        {
+            animationsController.ChangeAnimation(animationsController.run);
+            PlayWalkSound(runingSound);
+
+            if (agent.speed == walkSpeed)
+            {
+                agent.speed = runningSpeed;
+            }
+        }
     }
-    private void OnDisable()
+    void HandleAttack()
     {
-        NoiseSystem.OnNoise -= ReactToNoise;
+        // Atak
+        animationsController.ChangeAnimation(animationsController.attack);
+        agent.ResetPath();
+
+        if (walkAudioSource.isPlaying)
+        {
+            StartCoroutine(FadeOutAudio(walkAudioSource, fadeDuration));
+        }
     }
+
     void ReactToNoise(Vector3 noisePosition, float noiseRange)
     {
-        float dist =Vector3.Distance(transform.position, noisePosition);
+        float dist = Vector3.Distance(transform.position, noisePosition);
 
         if (dist <= noiseRange)
         {
@@ -273,7 +316,9 @@ public class ZombieController : MonoBehaviour
     }
 
     public void SetMarkMapVisibility(bool visible) => mapMark.SetActive(visible);
-    
+
+    public void DisableLookingAround() => zombieFolowPlayer = false;
+
 }
 
 

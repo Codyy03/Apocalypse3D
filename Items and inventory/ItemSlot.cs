@@ -74,7 +74,7 @@ public class ItemSlot : MonoBehaviour, IDropHandler, IPointerEnterHandler, IPoin
     private void MergeItemStacks(int from, int to, int itemId)
     {
         int currentAmount = inventory.HowManyItemsInSlot(itemId, to);
-        int maxAmount = inventory.ReturnItem(itemId).maxItemsInSlot;
+        int maxAmount = inventory.GetItem(itemId).maxItemsInSlot;
         int canAdd = maxAmount - currentAmount;
 
         if (canAdd <= 0) return;

@@ -45,9 +45,7 @@ public class PlayerHealth : MonoBehaviour
     public void ChangePlayerHealth(float value)
     {
         if (value < 0)
-        {
             value = ApplyArmorProtection(value);
-        }
         
         currentHealth = Mathf.Clamp(currentHealth + value, 0f, maxHealth);
         healthBar.fillAmount = currentHealth / maxHealth;
@@ -57,6 +55,10 @@ public class PlayerHealth : MonoBehaviour
         healthText.text = $"{currentHealth} / {maxHealth}";
     }
 
+    public void RegeneratePlayerHealth()
+    {
+        ChangePlayerHealth(maxHealth);
+    }
     /// <summary>
     /// zastosuj pancerz 
     /// </summary>
@@ -68,13 +70,13 @@ public class PlayerHealth : MonoBehaviour
             return damage;
 
         // Pobierz maksymaln¹ trwa³oœæ pancerza na podstawie danych przedmiotu z ekwipunku
-        float maxDurability = inventory.ReturnItem(setArmorFromInventory.actualUseID).durability;
+        float maxDurability = inventory.GetItem(setArmorFromInventory.actualUseID).durability;
 
         // Oblicz aktualny procent trwa³oœci (0.0 – 1.0), uwzglêdniaj¹c maksymaln¹ wartoœæ
         float durabilityRatio = Mathf.Clamp01(setArmorFromInventory.durability / maxDurability);
 
         // Pobierz efektywnoœæ pancerza (np. 0.4 oznacza redukcjê 40% obra¿eñ przy pe³nej trwa³oœci)
-        float armorEfficiency = inventory.ReturnItem(setArmorFromInventory.actualUseID).armor;
+        float armorEfficiency = inventory.GetItem(setArmorFromInventory.actualUseID).armor;
 
         // Po³¹cz trwa³oœæ i efektywnoœæ pancerza w jeden wspó³czynnik redukcji
         float reductionRatio = durabilityRatio * armorEfficiency;

@@ -7,7 +7,7 @@ public class GoToPointInWorld : MonoBehaviour
     [SerializeField] Transform destinationPoint;
     [SerializeField] float stopingDistance = 0.5f;
 
-    [SerializeField] Transform player;
+    Transform player;
 
     [SerializeField] string achiveTargetAnimation;
     bool targetIsAchive;
@@ -24,6 +24,8 @@ public class GoToPointInWorld : MonoBehaviour
 
     private void Start()
     {
+        player = FindFirstObjectByType<PlayerController>().transform;
+
         agent.SetDestination(destinationPoint.position);
         agent.isStopped = true;
     }
