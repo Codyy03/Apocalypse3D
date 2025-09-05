@@ -1,7 +1,6 @@
-> **ℹInformacja o zawartości repozytorium**  
+> **Informacja o zawartości repozytorium**  
 > Repozytorium zawiera **wyłącznie kod źródłowy gry** (skrypty C#, pliki konfiguracyjne, definicje obiektów).  
 > **Nie zawiera** pełnych assetów (modele 3D, tekstury, dźwięki, animacje) ze względu na prawa autorskie i rozmiar plików.  
-> Do uruchomienia projektu wymagane są własne lub zastępcze assety w odpowiednich folderach.
 
 # Aphocalysa 3D — fragment FPS w świecie postapokaliptycznym
 
@@ -88,12 +87,6 @@ Patrol, pogoń, atak
 - **NavMesh Agent:** Nawigacja przeciwników.
 - **Scriptable Objects:** Dialogi, definicje przedmiotów/questów.
 - **Audio:** Mikser, suwaki głośności, mapowanie dB.
-
----
-
-## Status
-- **Obecnie:** Grywalny fragment z kluczowymi systemami.
-
 ---
 
 ## Znane kwestie
